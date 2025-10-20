@@ -1,0 +1,16 @@
+body {
+    font-family: "Times New Roman", Times, serif;
+    text-align: center;
+    margin-top: 50px;
+    background-color: #ffffff;
+}
+a {
+    padding: 15px 30px;
+    margin: 15px 30px;
+    font-size: 18px;
+    background-color: #0e5d9e;
+    color: rgba(250, 239, 255, 0.602);
+    border: 3px solid #c7c7c7;;
+    border-radius: 8px;
+    cursor: pointer;
+}
