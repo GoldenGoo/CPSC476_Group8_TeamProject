@@ -16,8 +16,10 @@ a {
 }
 .game-container {
   display: flex;
-  gap: 20px;            /* space between game screens */
-  justify-content: center;
+  flex-direction: row;       /* horizontal layout */
+  justify-content: center;   /* center the row */
+  gap: 20px;                 /* space between canvases */
+  margin-top: 20px;
   align-items: flex-start;
 }
 

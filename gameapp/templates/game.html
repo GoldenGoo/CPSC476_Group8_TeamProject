@@ -2,24 +2,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title> Game Page</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    
+  <title> Game Page</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
 <body>
-    <h1> Game Page</h1>
-    <div class="game-container">
-        <div class="game-screen">
-            <canvas id="gameCanvas1"></canvas>
-        </div>
-        <div class="game-screen">
-            <canvas id="gameCanvas2"></canvas>
-        </div>
-        <div class="game-screen">
-            <canvas id="gameCanvas3"></canvas>
-        </div>
-        <!-- Duplicate .game-screen blocks for more players, in our case an AI player -->
+  <h1> Game Page</h1>
+  <div class="game-container">
+    <div class="game-screen">
+        <canvas id="gameCanvas1" width="300" height="600" style="width:300px; height:600px;"></canvas>
     </div>
-    <script src="{% static 'js/game.js' %}"></script>
+    <div class="game-screen">
+        <canvas id="gameCanvas2" width="300" height="600" style="width:300px; height:600px;"></canvas>
+    </div>
+    <div class="game-screen">
+        <canvas id="gameCanvas3" width="300" height="600" style="width:300px; height:600px;"></canvas>
+    </div>
+</div>
+
+
+  <!-- load Matter, then the game code -->
+  <script src="{% static 'js/matter.min.js' %}"></script>
+  <script src="{% static 'js/game.js' %}"></script>
 </body>
-</html> 
+</html>
