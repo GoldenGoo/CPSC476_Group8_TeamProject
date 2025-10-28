@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <style>
+       
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Floating shapes */
+        .shape {
+            position: absolute;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ff6f61;
+        }
+        .rectangle {
+            width: 80px;
+            height: 40px;
+            background: #ff856f;
+        }
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 50px solid #ffcc61;
+        }
+        .hexagon {
+            width: 70px;
+            height: 38px;
+            background: #6f61ff;
+            position: relative;
+        }
+        .hexagon:before,
+        .hexagon:after {
+            content: "";
+            position: absolute;
+            width: 0;
+            border-left: 35px solid transparent;
+            border-right: 35px solid transparent;
+        }
+        .hexagon:before { bottom: 100%; border-bottom: 19px solid #6f61ff; }
+        .hexagon:after { top: 100%; border-top: 19px solid #6f61ff; }
+        .pentagon {
+            width: 45px;
+            height: 50px;
+            background: #61ff6f;
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+        }
+        .star {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 40px solid #ff61ff;
+            position: relative;
+        }
+        .star:after {
+            content: "";
+            position: absolute;
+            top: 12px;
+            left: -20px;
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #ff61ff;
+        }
+
+        /* Main container */
+        .register-container {
+            position: relative;
+            z-index: 10;
+            background: #1f1f1f;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+            font-size: 28px;
+            color: #fff;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #2b2b2b;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: #ff6f61;
+            outline: none;
+            box-shadow: 0 0 5px rgba(255, 111, 97, 0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #ff6f61;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #ff856f;
+        }
+
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .messages p {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .messages .success { color: #61ff6f; }
+        .messages .error { color: #ff6161; }
+
+        p.login-link {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        p.login-link a {
+            color: #ff6f61;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        p.login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating shapes -->
+    <div class="shape circle"></div>
+    <div class="shape rectangle"></div>
+    <div class="shape triangle"></div>
+    <div class="shape hexagon"></div>
+    <div class="shape pentagon"></div>
+    <div class="shape star"></div>
+    <div class="shape circle"></div>
+    <div class="shape triangle"></div>
+    <div class="shape rectangle"></div>
+
+    <!-- this is the main to work container -->
+    <div class="register-container">
+        <h1>Register</h1>
+
+        <div class="messages">
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="password2" placeholder="Confirm Password" required>
+            <button type="submit">Register</button>
+        </form>
+
+        <p class="login-link">Already have an account? <a href="{% url 'login' %}">Login</a></p>
+    </div>
+
+    <script>
+        
+        const shapes = document.querySelectorAll('.shape');
+        shapes.forEach(shape => {
+            let x = Math.random() * window.innerWidth;
+            let y = Math.random() * window.innerHeight;
+            let dx = (Math.random() - 0.5) * 1.5;
+            let dy = (Math.random() - 0.5) * 1.5;
+            shape.style.left = x + 'px';
+            shape.style.top = y + 'px';
+
+            function animate() {
+                x += dx;
+                y += dy;
+
+                if (x < 0 || x + shape.offsetWidth > window.innerWidth) dx *= -1;
+                if (y < 0 || y + shape.offsetHeight > window.innerHeight) dy *= -1;
+
+                shape.style.left = x + 'px';
+                shape.style.top = y + 'px';
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        });
+    </script>
+</body>
+</html>

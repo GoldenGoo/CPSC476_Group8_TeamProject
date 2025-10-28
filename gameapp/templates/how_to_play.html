@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How to Play - Stack Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #111;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #2ecc71;
+            text-align: center;
+        }
+        h2 {
+            color: #f39c12;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        .key {
+            display: inline-block;
+            background-color: #333;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .canvas-sample {
+            margin-top: 10px;
+            border: 2px solid #f0f0f0;
+            display: inline-block;
+        }
+        .note {
+            background-color: #222;
+            padding: 10px;
+            border-left: 5px solid #f39c12;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stack Game - How to Play</h1>
+
+    <div class="section">
+        <h2>Objective</h2>
+        <p>The goal of Stack Game is to carefully stack falling shapes on top of each other without letting them fall off the screen. Stack as high as you can without any piece going out of bounds.</p>
+    </div>
+
+    <div class="section">
+        <h2>Game Elements</h2>
+        <ul>
+            <li><strong>Falling Shapes:</strong> Random shapes like circles, polygons, stars, and blobs fall from the top.</li>
+            <li><strong>Stack:</strong> Shapes that have settled become part of your stack.</li>
+            <li><strong>Floor:</strong> The bottom of the canvas where pieces land.</li>
+            <li><strong>Sensors:</strong> Invisible boundaries at left and right edges. If a piece crosses these, the game ends.</li>
+        </ul>
+        <div class="canvas-sample">
+            <canvas width="200" height="400"></canvas>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Controls</h2>
+        <p>Use the keyboard to move and rotate the falling pieces:</p>
+        <ul>
+            <li><strong>Player 1:</strong> <span class="key">A</span> = move left, <span class="key">D</span> = move right, <span class="key">Q</span> = rotate counter-clockwise, <span class="key">E</span> = rotate clockwise</li>
+            <li><strong>Player 2:</strong> <span class="key">J</span> = move left, <span class="key">L</span> = move right, <span class="key">U</span> = rotate counter-clockwise, <span class="key">O</span> = rotate clockwise</li>
+        </ul>
+        <p>Make sure to press keys gently – too much force may tip the stack!</p>
+    </div>
+
+    <div class="section">
+        <h2>Gameplay Tips</h2>
+        <ul>
+            <li>Plan your placement: Rotate and move the shape while it falls to fit the stack perfectly.</li>
+            <li>Control horizontal movement: Limit horizontal velocity to prevent the piece from sliding off.</li>
+            <li>Use rotation wisely: Some shapes need precise rotation to fit in tight spaces.</li>
+            <li>Stack stable shapes first: Avoid placing irregular shapes at the bottom.</li>
+            <li>Keep an eye on sensors: If any piece touches the left or right boundaries, the game ends immediately.</li>
+        </ul>
+        <div class="note">
+            Tip: The faster you react, the higher you can stack! But be careful not to rush – one mistake can end your game.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Game Over</h2>
+        <p>The game ends when:</p>
+        <ul>
+            <li>A piece falls off the left or right side (out-of-bounds).</li>
+            <li>The stack becomes unstable and topples over.</li>
+        </ul>
+        <p>When the game ends, you can reset the board and start stacking again.</p>
+    </div>
+
+    <div class="section">
+        <h2>Scoring</h2>
+        <p>There is no numerical score yet, but your goal is to stack as high as possible. Challenge yourself and others to build the tallest stack!</p>
+    </div>
+
+    <div class="section">
+        <h2>Notes</h2>
+        <ul>
+            <li>Each canvas is a separate game, so you can play multiple games simultaneously.</li>
+            <li>Gravity and physics are handled by Matter.js, so stacks behave realistically.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Enjoy the Game!</h2>
+        <p>Stack shapes, test your reflexes, and try to beat your own records. Have fun!</p>
+    </div>
+</body>
+</html>

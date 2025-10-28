@@ -1,15 +1,197 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title> Home Page</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <meta charset="UTF-8">
+    <title>Home Page</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Floating shapes container */
+        .shape {
+            position: absolute;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Shape styles */
+        .circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ff6f61;
+        }
+        .rectangle {
+            width: 100px;
+            height: 50px;
+            background: #ff856f;
+        }
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 60px solid #ffcc61;
+        }
+        .hexagon {
+            width: 80px;
+            height: 44px;
+            background: #6f61ff;
+            position: relative;
+        }
+        .hexagon:before,
+        .hexagon:after {
+            content: "";
+            position: absolute;
+            width: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+        }
+        .hexagon:before {
+            bottom: 100%;
+            border-bottom: 22px solid #6f61ff;
+        }
+        .hexagon:after {
+            top: 100%;
+            border-top: 22px solid #6f61ff;
+        }
+        .pentagon {
+            width: 54px;
+            background: #61ff6f;
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            height: 60px;
+        }
+        .star {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 50px solid #ff61ff;
+            position: relative;
+        }
+        .star:after {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: -25px;
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 50px solid #ff61ff;
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            background: #1f1f1f;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .button {
+            background-color: #ff6f61;
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+        }
+
+        .button:hover {
+            background-color: #ff856f;
+            transform: translateY(-2px);
+        }
+
+        .button.secondary {
+            background-color: #333;
+            color: #ff6f61;
+        }
+
+        .button.secondary:hover {
+            background-color: #444;
+            color: #ff856f;
+        }
+    </style>
 </head>
 <body>
-    <div>
-        <h1> Home Page</h1>
-        <a href="{% url 'game' %}" class="button">Next</a>
+    <div class="shape circle"></div>
+    <div class="shape rectangle"></div>
+    <div class="shape triangle"></div>
+    <div class="shape hexagon"></div>
+    <div class="shape pentagon"></div>
+    <div class="shape star"></div>
+    <div class="shape circle"></div>
+    <div class="shape triangle"></div>
+    <div class="shape rectangle"></div>
+    <div class="shape hexagon"></div>
+    <div class="shape pentagon"></div>
+    <div class="shape star"></div>
 
+    <!-- Main container -->
+    <div class="container">
+        <h1>Welcome to the Game!</h1>
+        <div class="button-group">
+            <a href="{% url 'game' %}" class="button">Start Game</a>
+            <a href="{% url 'how_to_play' %}" class="button secondary">How to Play</a>
+        </div>
     </div>
+
+    <script>
+        
+        const shapes = document.querySelectorAll('.shape');
+        shapes.forEach(shape => {
+            let x = Math.random() * window.innerWidth;
+            let y = Math.random() * window.innerHeight;
+            let dx = (Math.random() - 0.5) * 1.5;
+            let dy = (Math.random() - 0.5) * 1.5;
+            shape.style.left = x + 'px';
+            shape.style.top = y + 'px';
+
+            function animate() {
+                x += dx;
+                y += dy;
+
+              
+                if (x < 0 || x + shape.offsetWidth > window.innerWidth) dx *= -1;
+                if (y < 0 || y + shape.offsetHeight > window.innerHeight) dy *= -1;
+
+                shape.style.left = x + 'px';
+                shape.style.top = y + 'px';
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        });
+    </script>
 </body>
-</html> 
+</html>

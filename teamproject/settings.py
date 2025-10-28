@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'gameapp',
+    'accounts'
 ]
 
 MIDDLEWARE = [
@@ -122,3 +123,7 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = '/game/'        # root → home.html
+LOGOUT_REDIRECT_URL = '/login/' # after logout, go to login page
+LOGIN_URL = '/login/'           # login URL for @login_required redirects
