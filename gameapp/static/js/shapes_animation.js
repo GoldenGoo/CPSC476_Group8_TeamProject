@@ -1,4 +1,4 @@
-const shapes = document.querySelectorAll('.shape');
+const shapes = document.querySelectorAll('.shapes-overlay .shape');
 shapes.forEach(shape => {
     let x = Math.random() * window.innerWidth;
     let y = Math.random() * window.innerHeight;
