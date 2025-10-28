@@ -1,0 +1,73 @@
+/* Floating shapes container */
+        .shape {
+            position: absolute;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Shape styles */
+        .circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ff6f61;
+        }
+        .rectangle {
+            width: 100px;
+            height: 50px;
+            background: #ff856f;
+        }
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 60px solid #ffcc61;
+        }
+        .hexagon {
+            width: 80px;
+            height: 44px;
+            background: #6f61ff;
+            position: relative;
+        }
+        .hexagon:before,
+        .hexagon:after {
+            content: "";
+            position: absolute;
+            width: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+        }
+        .hexagon:before {
+            bottom: 100%;
+            border-bottom: 22px solid #6f61ff;
+        }
+        .hexagon:after {
+            top: 100%;
+            border-top: 22px solid #6f61ff;
+        }
+        .pentagon {
+            width: 54px;
+            background: #61ff6f;
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            height: 60px;
+        }
+        .star {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 50px solid #ff61ff;
+            position: relative;
+        }
+        .star:after {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: -25px;
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 50px solid #ff61ff;
+        }
