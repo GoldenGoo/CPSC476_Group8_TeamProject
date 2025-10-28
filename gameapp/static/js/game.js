@@ -99,11 +99,51 @@ class StackGame {
         const floor = Bodies.rectangle(this.width/2, this.height + thickness/2, this.width + 400, thickness, { isStatic: true, label: 'FLOOR', render: { visible: true, fillStyle: '#222' }});
         World.add(this.world, floor);
 
-        // sensors for left/right out of bounds detection
-        const sensorThickness = 10;
-        this.leftSensor = Bodies.rectangle(-sensorThickness/2, this.height/2, sensorThickness, this.height*2, { isSensor: true, isStatic: true, label: 'LEFT_SENSOR' });
-        this.rightSensor = Bodies.rectangle(this.width + sensorThickness/2, this.height/2, sensorThickness, this.height*2, { isSensor: true, isStatic: true, label: 'RIGHT_SENSOR' });
-        World.add(this.world, [this.leftSensor, this.rightSensor]);
+        // sensor geometry
+        const sensorThickness = 10;                      // thin strip just outside canvas
+        const safeHeight = Math.round(this.height / 6);  // lower safe zone height
+        const failHeight = this.height - safeHeight;     // remaining height above safe zone
+
+        // Left fail sensor (covers top 5/6), safe sensor (covers bottom 1/6)
+        this.leftFail  = Bodies.rectangle(
+            -sensorThickness/2,         // x just outside left
+            failHeight / 2,             // center y for top section
+            sensorThickness,
+            failHeight,
+            { isSensor: true, isStatic: true, label: 'LEFT_FAIL',
+                render: { visible: true, fillStyle: 'rgba(255,0,0,0.12)', strokeStyle: 'rgba(255,0,0,0.3)', lineWidth: 1 } }
+        );
+
+        this.leftSafe  = Bodies.rectangle(
+            -sensorThickness/2,         // x just outside left
+            failHeight + safeHeight/2,  // center y for bottom safe section
+            sensorThickness,
+            safeHeight,
+            { isSensor: true, isStatic: true, label: 'LEFT_SAFE',
+                render: { visible: true, fillStyle: 'rgba(0,200,100,0.12)', strokeStyle: 'rgba(0,200,100,0.35)', lineWidth: 1 } }
+        );
+
+        // Right fail sensor (covers top 5/6), safe sensor (covers bottom 1/6)
+        this.rightFail = Bodies.rectangle(
+            this.width + sensorThickness/2,
+            failHeight / 2,
+            sensorThickness,
+            failHeight,
+            { isSensor: true, isStatic: true, label: 'RIGHT_FAIL',
+                render: { visible: true, fillStyle: 'rgba(255,0,0,0.12)', strokeStyle: 'rgba(255,0,0,0.3)', lineWidth: 1 } }
+        );
+
+        this.rightSafe = Bodies.rectangle(
+            this.width + sensorThickness/2,
+            failHeight + safeHeight/2,
+            sensorThickness,
+            safeHeight,
+            { isSensor: true, isStatic: true, label: 'RIGHT_SAFE',
+                render: { visible: true, fillStyle: 'rgba(0,200,100,0.12)', strokeStyle: 'rgba(0,200,100,0.35)', lineWidth: 1 } }
+        );
+
+        // add all sensors to world
+        World.add(this.world, [ this.leftFail, this.leftSafe, this.rightFail, this.rightSafe ]);
 
         Render.run(this.render);
         this.runner = Runner.create();
@@ -115,35 +155,30 @@ class StackGame {
             const a = pair.bodyA;
             const b = pair.bodyB;
 
-            // handle out-of-bounds sensors
-            if (a.isSensor && (a.label === 'LEFT_SENSOR' || a.label === 'RIGHT_SENSOR')) {
-                if (!b.isSensor) this._onOutOfBounds(b);
+            // handle left/right fail sensors, only fail if the colliding object isnt falling
+            if (a.isSensor && (a.label === 'LEFT_FAIL' || a.label === 'RIGHT_FAIL')) {
+                if (!b.isSensor) {
+                    const vy = b.velocity ? b.velocity.y : 0;
+                    // If the object is still falling down fast, ignore it
+                    if (Math.abs(vy) <= FALLING_VELOCITY_THRESHOLD) {
+                    this._onOutOfBounds(b);
+                    }
+                }
                 continue;
             }
-            if (b.isSensor && (b.label === 'LEFT_SENSOR' || b.label === 'RIGHT_SENSOR')) {
-                if (!a.isSensor) this._onOutOfBounds(a);
+            if (b.isSensor && (b.label === 'LEFT_FAIL' || b.label === 'RIGHT_FAIL')) {
+                if (!a.isSensor) {
+                    const vy = a.velocity ? a.velocity.y : 0;
+                    if (Math.abs(vy) <= FALLING_VELOCITY_THRESHOLD) {
+                    this._onOutOfBounds(a);
+                    }
+                }
                 continue;
             }
-
-            // falling -> contact with a static placed surface: finalize only if contact is from above
-            // identify falling body
-            const isFalling = (body) => this.activePiece && this.activePiece.body === body;
-            if (!isFalling(a) && !isFalling(b)) continue;
-
-            const falling = isFalling(a) ? a : b;
-            const other   = falling === a ? b : a;
-
-            // ignore sensors and other falling bodies
-            if (other.isSensor) continue;
-            if (other.label === 'FALLING') continue;
 
             // grace period avoid immediate finalize on spawn
             const now = Date.now();
             if (this.activePiece && now - this.activePiece.spawnedAt < 80) continue;
-
-            // use collision normal to prefer contacts from below the falling body
-            // pair.collision.normal is relative to bodies; check sign by inspecting a/b order
-            
 
             // finalize the falling body
             this._finalizeFallingBody(falling);
