@@ -106,7 +106,7 @@ class StackGame {
 
         // Left fail sensor (covers top 5/6), safe sensor (covers bottom 1/6)
         this.leftFail  = Bodies.rectangle(
-            -sensorThickness/2,         // x just outside left
+            sensorThickness/2,         // x just outside left
             failHeight / 2,             // center y for top section
             sensorThickness,
             failHeight,
@@ -114,18 +114,28 @@ class StackGame {
                 render: { visible: true, fillStyle: 'rgba(255,0,0,0.12)', strokeStyle: 'rgba(255,0,0,0.3)', lineWidth: 1 } }
         );
 
+        // Left inner collision wall (thin, inside canvas), physically blocks active pieces
+        this.leftWallInside = Bodies.rectangle(
+            sensorThickness/2,          // just inside the left edge
+            failHeight / 2,
+            sensorThickness/2,            // thin solid wall
+            failHeight,
+            { isSensor: false, isStatic: true, label: 'LEFT_WALL',
+                render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' } }
+        );
+
         this.leftSafe  = Bodies.rectangle(
-            -sensorThickness/2,         // x just outside left
+            sensorThickness/2,         // x just outside left
             failHeight + safeHeight/2,  // center y for bottom safe section
             sensorThickness,
             safeHeight,
-            { isSensor: true, isStatic: true, label: 'LEFT_SAFE',
+            { isSensor: false, isStatic: true, label: 'LEFT_SAFE',
                 render: { visible: true, fillStyle: 'rgba(0,200,100,0.12)', strokeStyle: 'rgba(0,200,100,0.35)', lineWidth: 1 } }
         );
 
         // Right fail sensor (covers top 5/6), safe sensor (covers bottom 1/6)
         this.rightFail = Bodies.rectangle(
-            this.width + sensorThickness/2,
+            this.width - sensorThickness/2,
             failHeight / 2,
             sensorThickness,
             failHeight,
@@ -133,55 +143,87 @@ class StackGame {
                 render: { visible: true, fillStyle: 'rgba(255,0,0,0.12)', strokeStyle: 'rgba(255,0,0,0.3)', lineWidth: 1 } }
         );
 
+        this.rightWallInside = Bodies.rectangle(
+            this.width - sensorThickness/2, // just inside right edge
+            failHeight / 2,
+            sensorThickness/2,
+            failHeight,
+            { isSensor: false, isStatic: true, label: 'RIGHT_WALL',
+                render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' } }
+        );
+
         this.rightSafe = Bodies.rectangle(
-            this.width + sensorThickness/2,
+            this.width - sensorThickness/2,
             failHeight + safeHeight/2,
             sensorThickness,
             safeHeight,
-            { isSensor: true, isStatic: true, label: 'RIGHT_SAFE',
+            { isSensor: false, isStatic: true, label: 'RIGHT_SAFE',
                 render: { visible: true, fillStyle: 'rgba(0,200,100,0.12)', strokeStyle: 'rgba(0,200,100,0.35)', lineWidth: 1 } }
         );
 
         // add all sensors to world
-        World.add(this.world, [ this.leftFail, this.leftSafe, this.rightFail, this.rightSafe ]);
+        World.add(this.world, [ this.leftFail, this.leftWallInside, this.leftSafe, this.rightFail, this.rightWallInside, this.rightSafe ]);
 
         Render.run(this.render);
         this.runner = Runner.create();
         Runner.run(this.runner, this.engine);
 
-    // Collision event to detect sensor contacts
+    // Collision event to detect sensor contacts (robust to parts/compound bodies)
     Events.on(this.engine, 'collisionStart', (event) => {
+        const FALLING_VELOCITY_THRESHOLD = 0.5; // downward velocity threshold (Matter uses +y downward)
+
+        const rootBody = (b) => (b && b.parent && b.parent !== b) ? b.parent : b;
+        const isPartOf = (candidate, target) => {
+            if (!candidate || !target) return false;
+            if (candidate.id === target.id) return true;
+            if (target.parts && target.parts.some(p => p.id === candidate.id)) return true;
+            return false;
+        };
+
         for (const pair of event.pairs) {
-            const a = pair.bodyA;
-            const b = pair.bodyB;
+            const a = rootBody(pair.bodyA);
+            const b = rootBody(pair.bodyB);
 
-            // handle left/right fail sensors, only fail if the colliding object isnt falling
-            if (a.isSensor && (a.label === 'LEFT_FAIL' || a.label === 'RIGHT_FAIL')) {
-                if (!b.isSensor) {
-                    const vy = b.velocity ? b.velocity.y : 0;
-                    // If the object is still falling down fast, ignore it
-                    if (Math.abs(vy) <= FALLING_VELOCITY_THRESHOLD) {
-                    this._onOutOfBounds(b);
-                    }
+            // if both sensors or both non-sensors, handle below or skip
+            if (a.isSensor && b.isSensor) continue;
+
+            // Identify sensor (if any) and the other body
+            const sensor = a.isSensor ? a : (b.isSensor ? b : null);
+            const other  = sensor ? (sensor === a ? b : a) : null;
+
+            if (sensor) {
+                // ignore safe sensors entirely
+                if (sensor.label && sensor.label.endsWith('_SAFE')) continue;
+
+                // fail sensors: only trigger when the object is NOT actively falling fast
+                if (sensor.label && sensor.label.endsWith('_FAIL')) {
+                    if (!other || other.isSensor) continue;
+                    const vy = other.velocity ? other.velocity.y : 0;
+                    // matter y is positive down; if object is moving down faster than threshold, ignore
+                    if (vy > FALLING_VELOCITY_THRESHOLD) continue;
+                    this._onOutOfBounds(other);
                 }
                 continue;
             }
-            if (b.isSensor && (b.label === 'LEFT_FAIL' || b.label === 'RIGHT_FAIL')) {
-                if (!a.isSensor) {
-                    const vy = a.velocity ? a.velocity.y : 0;
-                    if (Math.abs(vy) <= FALLING_VELOCITY_THRESHOLD) {
-                    this._onOutOfBounds(a);
-                    }
-                }
-                continue;
-            }
 
-            // grace period avoid immediate finalize on spawn
+            // No sensor involved: check for finalizing an active falling piece hitting something
+            if (!this.activePiece || !this.activePiece.body) continue;
+            const active = this.activePiece.body;
+            const collidedWithActive = isPartOf(a, active) || isPartOf(b, active);
+            if (!collidedWithActive) continue;
+
+            // figure which object is the other
+            const fallingPart = isPartOf(a, active) ? a : b;
+            const otherBody = fallingPart === a ? b : a;
+            if (!otherBody || otherBody.isSensor) continue;
+            if (otherBody.label === 'FALLING') continue;
+
+            // grace period to avoid immediate finalize on spawn
             const now = Date.now();
             if (this.activePiece && now - this.activePiece.spawnedAt < 80) continue;
 
-            // finalize the falling body
-            this._finalizeFallingBody(falling);
+            // finalize using the active body (handler accepts parts now)
+            this._finalizeFallingBody(fallingPart);
         }
     });
 
@@ -190,8 +232,16 @@ class StackGame {
   }
 
     _finalizeFallingBody(body) {
+        // allow passing either the active body or one of its parts
         if (!this.activePiece) return;
-        if (body !== this.activePiece.body) return;
+        const active = this.activePiece.body;
+        const matchesActive = (b, target) => {
+            if (!b || !target) return false;
+            if (b.id === target.id) return true;
+            if (target.parts && target.parts.some(p => p.id === b.id)) return true;
+            return false;
+        };
+        if (!matchesActive(body, active)) return;
 
         // remove player control
         this.activePiece = null;
