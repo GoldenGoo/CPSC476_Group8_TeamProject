@@ -118,7 +118,7 @@ class StackGame {
         this.leftWallInside = Bodies.rectangle(
             sensorThickness/2,          // just inside the left edge
             failHeight / 2,
-            sensorThickness/2,            // thin solid wall
+            sensorThickness/4,            // thin solid wall
             failHeight,
             { isSensor: false, isStatic: true, label: 'LEFT_WALL',
                 render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' } }
@@ -146,7 +146,7 @@ class StackGame {
         this.rightWallInside = Bodies.rectangle(
             this.width - sensorThickness/2, // just inside right edge
             failHeight / 2,
-            sensorThickness/2,
+            sensorThickness/4,
             failHeight,
             { isSensor: false, isStatic: true, label: 'RIGHT_WALL',
                 render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' } }
@@ -169,6 +169,12 @@ class StackGame {
         Runner.run(this.runner, this.engine);
 
     // Collision event to detect sensor contacts (robust to parts/compound bodies)
+    // Currently has a bug: When a falling body collides with a sensor, it will not
+    // trip the sensor (intended), but if that falling body maintains contact with the
+    // sensor after it has fallen, the sensor is never re-triggered. This allows players
+    // to force pieces to rest against the sensor and avoid failing even when out of bounds.
+    // A proper fix would be to track which bodies are in contact with sensors and
+    // re-evaluate on separation, but for now it works fine.
     Events.on(this.engine, 'collisionStart', (event) => {
         const FALLING_VELOCITY_THRESHOLD = 0.5; // downward velocity threshold (Matter uses +y downward)
 
