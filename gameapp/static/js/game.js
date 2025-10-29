@@ -7,9 +7,9 @@ const CONFIG = {
     canvasCssW: 300,
     canvasCssH: 600,
     spawnYOffset: -60,
-    gravityY: 0.5,
+    gravityY: 0.4,
     lateralForce: 0.02,         // instantaneous force applied on keydown
-    maxLateralSpeed: 1,         // limit horizontal speed
+    maxLateralSpeed: 0.05,         // limit horizontal speed
     angularImpulse: 0.005,      // rotation impulse
     timeToConsiderRestMs: 350,  // time of low speed to mark resting
 };
@@ -73,6 +73,9 @@ class StackGame {
         window.stackGames = window.stackGames || [];
         window.stackGames.push(this);
 
+        // track bodies currently overlapping any FAIL sensor (store body.id)
+        this._sensorOverlaps = new Set();
+
         this._initEngine();
         this._bindInput();
         this.spawnNextPiece();
@@ -124,8 +127,16 @@ class StackGame {
             failHeight / 2,
             sensorThickness/4,            // thin solid wall
             failHeight,
-            { isSensor: false, isStatic: true, label: 'LEFT_WALL',
-                render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' } }
+            {
+                isSensor: false,
+                isStatic: true,
+                label: 'LEFT_WALL',
+                // remove friction so the wall doesn't artificially slow falling pieces
+                friction: 0,
+                frictionStatic: 0,
+                restitution: 0,
+                render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' }
+            }
         );
 
         this.leftSafe  = Bodies.rectangle(
@@ -152,8 +163,16 @@ class StackGame {
             failHeight / 2,
             sensorThickness/4,
             failHeight,
-            { isSensor: false, isStatic: true, label: 'RIGHT_WALL',
-                render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' } }
+            {
+                isSensor: false,
+                isStatic: true,
+                label: 'RIGHT_WALL',
+                // remove friction so the wall doesn't artificially slow falling pieces
+                friction: 0,
+                frictionStatic: 0,
+                restitution: 0,
+                render: { visible: true, fillStyle: 'rgba(255,0,0,0.06)' }
+            }
         );
 
         this.rightSafe = Bodies.rectangle(
@@ -172,16 +191,13 @@ class StackGame {
         this.runner = Runner.create();
         Runner.run(this.runner, this.engine);
 
-    // Collision event to detect sensor contacts (robust to parts/compound bodies)
-    // Currently has a bug: When a falling body collides with a sensor, it will not
-    // trip the sensor (intended), but if that falling body maintains contact with the
-    // sensor after it has fallen, the sensor is never re-triggered. This allows players
-    // to force pieces to rest against the sensor and avoid failing even when out of bounds.
-    // A proper fix would be to track which bodies are in contact with sensors and
-    // re-evaluate on separation, but for now it works fine.
-    Events.on(this.engine, 'collisionStart', (event) => {
+    // Improved collision handlers:
+    // - keep a set of bodies overlapping fail sensors
+    // - handle collisionStart as before and add overlapping bodies to the set
+    // - handle collisionActive to re-check velocities for overlaps (covers the "slow down while overlapping" case)
+    // - handle collisionEnd to remove overlaps
+    {
         const FALLING_VELOCITY_THRESHOLD = 0.5; // downward velocity threshold (Matter uses +y downward)
-
         const rootBody = (b) => (b && b.parent && b.parent !== b) ? b.parent : b;
         const isPartOf = (candidate, target) => {
             if (!candidate || !target) return false;
@@ -190,52 +206,80 @@ class StackGame {
             return false;
         };
 
-        for (const pair of event.pairs) {
-            const a = rootBody(pair.bodyA);
-            const b = rootBody(pair.bodyB);
+        // collisionStart: add sensor overlaps and finalize falling pieces
+        Events.on(this.engine, 'collisionStart', (event) => {
+            for (const pair of event.pairs) {
+                const a = rootBody(pair.bodyA);
+                const b = rootBody(pair.bodyB);
 
-            // if both sensors or both non-sensors, handle below or skip
-            if (a.isSensor && b.isSensor) continue;
-
-            // Identify sensor (if any) and the other body
-            const sensor = a.isSensor ? a : (b.isSensor ? b : null);
-            const other  = sensor ? (sensor === a ? b : a) : null;
-
-            if (sensor) {
-                // ignore safe sensors entirely
-                if (sensor.label && sensor.label.endsWith('_SAFE')) continue;
-
-                // fail sensors: only trigger when the object is NOT actively falling fast
-                if (sensor.label && sensor.label.endsWith('_FAIL')) {
+                // sensor handling
+                if (a.isSensor || b.isSensor) {
+                    const sensor = a.isSensor ? a : b;
+                    const other = sensor === a ? b : a;
                     if (!other || other.isSensor) continue;
-                    const vy = other.velocity ? other.velocity.y : 0;
-                    // matter y is positive down; if object is moving down faster than threshold, ignore
-                    if (vy > FALLING_VELOCITY_THRESHOLD) continue;
-                    this._onOutOfBounds(other);
+                    if (sensor.label && sensor.label.endsWith('_SAFE')) continue;
+                    if (sensor.label && sensor.label.endsWith('_FAIL')) {
+                        // mark overlap so we can re-evaluate in collisionActive
+                        this._sensorOverlaps.add(other.id);
+                        const vy = other.velocity ? other.velocity.y : 0;
+                        if (vy <= FALLING_VELOCITY_THRESHOLD) {
+                            this._onOutOfBounds(other);
+                        }
+                    }
+                    continue;
                 }
-                continue;
+
+                // finalize falling piece when it hits a non-sensor/stack/floor
+                if (!this.activePiece || !this.activePiece.body) continue;
+                const active = this.activePiece.body;
+                const collidedWithActive = isPartOf(a, active) || isPartOf(b, active);
+                if (!collidedWithActive) continue;
+
+                const fallingPart = isPartOf(a, active) ? a : b;
+                const otherBody = fallingPart === a ? b : a;
+                if (!otherBody || otherBody.isSensor) continue;
+                if (otherBody.label === 'FALLING') continue;
+
+                const now = Date.now();
+                if (this.activePiece && now - this.activePiece.spawnedAt < 80) continue;
+                this._finalizeFallingBody(fallingPart);
             }
+        });
 
-            // No sensor involved: check for finalizing an active falling piece hitting something
-            if (!this.activePiece || !this.activePiece.body) continue;
-            const active = this.activePiece.body;
-            const collidedWithActive = isPartOf(a, active) || isPartOf(b, active);
-            if (!collidedWithActive) continue;
+        // collisionActive: continuously re-check bodies that remain overlapping fail sensors
+        Events.on(this.engine, 'collisionActive', (event) => {
+            for (const pair of event.pairs) {
+                const a = rootBody(pair.bodyA);
+                const b = rootBody(pair.bodyB);
+                const sensor = a.isSensor ? a : (b.isSensor ? b : null);
+                const other = sensor ? (sensor === a ? b : a) : null;
+                if (!sensor || !other || other.isSensor) continue;
+                if (sensor.label && sensor.label.endsWith('_SAFE')) continue;
+                if (sensor.label && sensor.label.endsWith('_FAIL')) {
+                    // ensure we track this overlap
+                    this._sensorOverlaps.add(other.id);
+                    const vy = other.velocity ? other.velocity.y : 0;
+                    if (vy <= FALLING_VELOCITY_THRESHOLD) {
+                        this._onOutOfBounds(other);
+                    }
+                }
+            }
+        });
 
-            // figure which object is the other
-            const fallingPart = isPartOf(a, active) ? a : b;
-            const otherBody = fallingPart === a ? b : a;
-            if (!otherBody || otherBody.isSensor) continue;
-            if (otherBody.label === 'FALLING') continue;
-
-            // grace period to avoid immediate finalize on spawn
-            const now = Date.now();
-            if (this.activePiece && now - this.activePiece.spawnedAt < 80) continue;
-
-            // finalize using the active body (handler accepts parts now)
-            this._finalizeFallingBody(fallingPart);
-        }
-    });
+        // collisionEnd: remove from overlap tracking
+        Events.on(this.engine, 'collisionEnd', (event) => {
+            for (const pair of event.pairs) {
+                const a = rootBody(pair.bodyA);
+                const b = rootBody(pair.bodyB);
+                const sensor = a.isSensor ? a : (b.isSensor ? b : null);
+                const other = sensor ? (sensor === a ? b : a) : null;
+                if (!sensor || !other || other.isSensor) continue;
+                if (sensor.label && sensor.label.endsWith('_FAIL')) {
+                    this._sensorOverlaps.delete(other.id);
+                }
+            }
+        });
+    }
 
     // monitor resting logic on each tick
     Events.on(this.engine, 'afterUpdate', () => this._afterUpdate());
