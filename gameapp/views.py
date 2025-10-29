@@ -4,15 +4,15 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 
 
-# @login_required
+@login_required
 def home(request):
     return render(request, "home.html")
 
-# @login_required
+@login_required
 def game_page(request):
     return render(request, "game.html")
 
-# @login_required
+@login_required
 def how_to_play(request):
     return render(request, "how_to_play.html")
 
