@@ -69,6 +69,10 @@ class StackGame {
         this.lastMoveTs = 0;
         this._keyState = {}; // track pressed keys
 
+        // register this instance so we can check when all games finish
+        window.stackGames = window.stackGames || [];
+        window.stackGames.push(this);
+
         this._initEngine();
         this._bindInput();
         this.spawnNextPiece();
@@ -382,6 +386,20 @@ class StackGame {
         // Mark failure visually (e.g., tint canvas), done by adding an overlay class
         this.canvas.parentElement.classList.add('failed');
         console.log('Game failed on canvas', this.canvas.id, 'body', body.id);
+   
+        // check whether all registered games have finished, then prompt once to restart page
+        setTimeout(() => {
+            const all = (window.stackGames || []).filter(g => g && typeof g.failed === 'boolean');
+            if (all.length === 0) return;
+            const allFailed = all.every(g => g.failed);
+            if (!allFailed) return;
+            if (window._restartPromptShown) return;
+            window._restartPromptShown = true;
+            // simple popup restart, reload page if user confirms
+            if (confirm('All players have finished. Restart the game?')) {
+                location.reload();
+            }
+        }, 20);
     }
 
     reset() {
@@ -391,6 +409,9 @@ class StackGame {
         Render.stop(this.render);
         World.clear(this.world, true);
         Engine.clear(this.engine);
+
+        // on reset, clear failed state in the global registry so other games aren't blocked
+        window._restartPromptShown = false;
 
         // cleanup DOM render canvas pixel buffer (keep element)
         const ctx = this.canvas.getContext('2d');
