@@ -86,6 +86,30 @@
     </div>
 
     <script src="{% static 'js/shapes_animation.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if ('speechSynthesis' in window) {
+        
+        const messages = [
+            "Click Start Game to play the game",
+            "Click How to Play to learn about the instructions"
+        ];
+
+        messages.forEach((msg, index) => {
+            const utterance = new SpeechSynthesisUtterance(msg);
+            utterance.rate = 1;  
+            utterance.pitch = 1;  
+            
+            utterance.delay = index * 1000;
+            window.speechSynthesis.speak(utterance);
+        });
+    } else {
+        console.warn('Speech Synthesis not supported in this browser.');
+    }
+});
+</script>
+
+
 
     <!-- Main container -->
     <div class="container">
