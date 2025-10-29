@@ -1,19 +1,23 @@
 body {
-    font-family: "Times New Roman", Times, serif;
-    text-align: center;
-    margin-top: 50px;
-    background-color: #ffffff;
+    margin: 0;
+    padding: 25px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #121212;
+    color: #fff;
+    min-height: 100vh;
+    overflow: auto;
+    display: flex;
+    flex-direction: column; 
+    justify-content: flex-start;
+    align-items: center;
 }
-a {
-    padding: 15px 30px;
-    margin: 15px 30px;
-    font-size: 18px;
-    background-color: #0e5d9e;
-    color: rgba(250, 239, 255, 0.602);
-    border: 3px solid #c7c7c7;;
-    border-radius: 8px;
-    cursor: pointer;
+
+h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    color: #fff;
 }
+
 .game-container {
   display: flex;
   flex-direction: row;       /* horizontal layout */
