@@ -22,101 +22,7 @@ const CONFIG = {
 };
 
 // Utility: random color
-function randomColor() { return `hsl(${Math.floor(Math.random()*360)},70%,50%)`; }
-
-// Base piece factory: returns a Matter body positioned at (x,y)
-// Supported types: 'rectangle', 'diamond', 'star', 'triangle', 'pentagon', 'roman'
-// `size` is a tunable base size — functions scale shapes from that base.
-function createPiece(type, x, y, size, options = {}) {
-    type = (type || '').toLowerCase();
-    const o = Object.assign({}, options);
-
-    switch (type) {
-        case 'rectangle': {
-            const w = Math.round(size * 1.6);
-            const h = Math.round(size);
-            return Bodies.rectangle(x, y, w, h, o);
-        }
-
-        case 'diamond': {
-            // diamond is a rotated square/rect; create via polygon vertices
-            const half = size / 1.25;
-            const verts = [
-                { x: 0, y: -half },
-                { x: half, y: 0 },
-                { x: 0, y: half },
-                { x: -half, y: 0 }
-            ];
-            return Bodies.fromVertices(x, y, [verts], o, true);
-        }
-
-        case 'triangle': {
-            const verts = makeRegularPolygonVertices(3, size);
-            return Bodies.fromVertices(x, y, [verts], o, true);
-        }
-
-        case 'pentagon': {
-            const verts = makeRegularPolygonVertices(5, size);
-            return Bodies.fromVertices(x, y, [verts], o, true);
-        }
-
-        case 'star': {
-            // 5-point star by default; innerRatio tunable via options.innerRatio
-            const points = options.points || 5;
-            const innerRatio = (typeof options.innerRatio === 'number') ? options.innerRatio : 0.45;
-            const verts = makeStarVertices(size, points, innerRatio);
-            return Bodies.fromVertices(x, y, [verts], o, true);
-        }
-
-        case 'semicircle': {
-            // create a solid semicircle (half-disc) by sampling the arc
-            // radius: use provided size as radius
-            const radius = size;
-            // choose number of segments based on size for smoothness
-            const segments = Math.max(8, Math.round(radius / 1.5));
-            const verts = [];
-            const angleStep = Math.PI / segments; // semicircle spans PI radians
-            for (let i = 0; i <= segments; i++) {
-                const angle = i * angleStep;
-                const xOff = Math.cos(angle) * radius;
-                const yOff = Math.sin(angle) * radius;
-                verts.push({ x: xOff, y: yOff });
-            }
-            // Bodies.fromVertices will decompose if necessary
-            return Bodies.fromVertices(x, y, [verts], o, true);
-        }
-
-
-        default: {
-            // fallback to a rectangle if an unknown type is given
-            const w = Math.round(size * 1.6);
-            const h = Math.round(size);
-            return Bodies.rectangle(x, y, w, h, o);
-        }
-    }
-}
-
-// Helper: regular polygon vertices centered at (0,0)
-function makeRegularPolygonVertices(sides, radius) {
-    const verts = [];
-    for (let i = 0; i < sides; i++) {
-        const theta = (Math.PI * 2 * i) / sides - Math.PI / 2;
-        verts.push({ x: Math.cos(theta) * radius, y: Math.sin(theta) * radius });
-    }
-    return verts;
-}
-
-// Helper: star vertices (alternating outer/inner radii)
-function makeStarVertices(radius, points, innerRatio) {
-    const verts = [];
-    const total = points * 2;
-    for (let i = 0; i < total; i++) {
-        const angle = (Math.PI * 2 * i) / total - Math.PI / 2;
-        const r = (i % 2 === 0) ? radius : radius * innerRatio;
-        verts.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
-    }
-    return verts;
-}
+// Note: shape creation and helpers moved to `shapes.js` as `window.ShapeFactory`.
 
 // Main class per canvas screen
 class StackGame {
@@ -127,7 +33,10 @@ class StackGame {
         this.activePiece = null;
         this.stackBodies = [];
         this.lastMoveTs = 0;
-        this._keyState = {}; // track pressed keys
+        // playerController handles key state and input application (only if a keymap was provided)
+        if (this.keymap && Object.keys(this.keymap).length) {
+            this.playerController = new PlayerController(this.keymap);
+        }
 
         // register this instance so we can check when all games finish
         window.stackGames = window.stackGames || [];
@@ -137,7 +46,6 @@ class StackGame {
         this._sensorOverlaps = new Set();
 
         this._initEngine();
-        this._bindInput();
         this.spawnNextPiece();
     }
 
@@ -397,36 +305,7 @@ class StackGame {
     }
 
     _bindInput() {
-        // scoped key handlers
-        this._onKeyDown = (e) => {
-            const k = e.key.toLowerCase();
-            if (k === this.keymap.left) this._keyState.left = true;
-            if (k === this.keymap.right) this._keyState.right = true;
-            if (k === this.keymap.down) this._keyState.down = true;
-            if (k === this.keymap.rotCCW) this._keyState.rotCCW = true;
-            if (k === this.keymap.rotCW) this._keyState.rotCW = true;
-            // prevent default to stop page scroll for some keys
-            if (Object.values(this.keymap).includes(k)) e.preventDefault();
-        };
-        this._onKeyUp = (e) => {
-            const k = e.key.toLowerCase();
-            if (k === this.keymap.left) this._keyState.left = false;
-            if (k === this.keymap.right) this._keyState.right = false;
-            if (k === this.keymap.down) this._keyState.down = false;
-            if (k === this.keymap.rotCCW) this._keyState.rotCCW = false;
-            if (k === this.keymap.rotCW) this._keyState.rotCW = false;
-        };
-        // clear keys when window loses focus so boosts don't stick
-        this._clearKeyState = () => {
-            this._keyState.left = false;
-            this._keyState.right = false;
-            this._keyState.down = false;
-            this._keyState.rotCCW = false;
-            this._keyState.rotCW = false;
-        };
-        window.addEventListener('keydown', this._onKeyDown);
-        window.addEventListener('keyup', this._onKeyUp);
-        window.addEventListener('blur', this._clearKeyState);
+        // input handled by PlayerController; kept for API parity
     }
 
     spawnNextPiece() {
@@ -441,7 +320,7 @@ class StackGame {
         const x = this.width / 2;
         const y = CONFIG.spawnYOffset;
 
-        const fill = randomColor();
+        const fill = (window.ShapeFactory && window.ShapeFactory.randomColor) ? window.ShapeFactory.randomColor() : '#f0f';
         const options = {
             restitution: 0.0,
             friction: 0.1,
@@ -450,7 +329,7 @@ class StackGame {
             label: 'FALLING'
         };
 
-        const body = createPiece(type, x, y, size, options);
+        const body = (window.ShapeFactory && window.ShapeFactory.createPiece) ? window.ShapeFactory.createPiece(type, x, y, size, options) : Bodies.rectangle(x,y,Math.round(size*1.6),Math.round(size), options);
         body.label = 'FALLING';
         Body.setAngularVelocity(body, 0);
         // give some air/friction so rotation decays when player stops applying torque
@@ -460,68 +339,20 @@ class StackGame {
         this.activePiece = { body, spawnedAt: Date.now(), settledSince: null };
     }
 
-    _applyInputs() {
-        if (!this.activePiece || this.failed) return;
-        const body = this.activePiece.body;
-
-        // lateral movement
-        if (this._keyState.left) {
-            Body.applyForce(body, body.position, { x: -CONFIG.lateralForce * body.mass, y: 0 });
-        }
-        if (this._keyState.right) {
-            Body.applyForce(body, body.position, { x: CONFIG.lateralForce * body.mass, y: 0 });
-        }
-
-        // rotation control: adjust angular velocity directly while key is pressed
-        // and decelerate quickly when released so rotation stops without applying linear forces
-        const av = body.angularVelocity;
-        if (this._keyState.rotCCW) {
-            const newAv = av - CONFIG.angularImpulse;
-            Body.setAngularVelocity(body, Math.max(-CONFIG.maxAngularSpeed, newAv));
-        } else if (this._keyState.rotCW) {
-            const newAv = av + CONFIG.angularImpulse;
-            Body.setAngularVelocity(body, Math.min(CONFIG.maxAngularSpeed, newAv));
-        } else {
-            // no rotation keys pressed -> apply quick angular deceleration toward zero
-            const decel = Math.max(CONFIG.angularImpulse * 2, 0.01);
-            if (av > 0) {
-                const newAv = Math.max(0, av - decel);
-                Body.setAngularVelocity(body, newAv);
-            } else if (av < 0) {
-                const newAv = Math.min(0, av + decel);
-                Body.setAngularVelocity(body, newAv);
-            }
-        }
-
-        // limit horizontal velocity
-        const vx = body.velocity.x;
-        if (Math.abs(vx) > CONFIG.maxLateralSpeed) {
-            Body.setVelocity(body, { x: Math.sign(vx) * CONFIG.maxLateralSpeed, y: body.velocity.y });
-        }
-
-        // cap angular velocity so pieces don't spin forever
-        const avCap = body.angularVelocity;
-        if (Math.abs(avCap) > CONFIG.maxAngularSpeed) {
-            Body.setAngularVelocity(body, Math.sign(avCap) * CONFIG.maxAngularSpeed);
-        }
-
-        // soft drop: while down key held, gently increase downward velocity, capped
-        if (this._keyState.down) {
-            const vy = body.velocity.y || 0;
-            const newVy = Math.min(vy + CONFIG.softDropIncrement, CONFIG.maxSoftDropSpeed);
-            Body.setVelocity(body, { x: body.velocity.x, y: newVy });
-        }
-
-        this.lastMoveTs = Date.now();
-    }
+    // input application delegated to controllers: `playerController` and/or `aiController`.
 
   
     _afterUpdate() {
         if (this.failed) return;
-        // keep applying inputs to active piece while present
-        this._applyInputs();
+        // human controller
+        if (this.playerController && typeof this.playerController.applyInputs === 'function') {
+            this.playerController.applyInputs(this.activePiece, CONFIG);
+        }
+        // AI controller (if present)
+        if (this.aiController && typeof this.aiController.applyInputs === 'function') {
+            this.aiController.applyInputs(this.activePiece, CONFIG, this);
+        }
         // we no longer need time-based settling conversion because collisionStart handles instant finalization
-        // should probably keep safety checks (off-screen detection, etc.)
     }
 
     _onOutOfBounds(body) {
@@ -560,9 +391,9 @@ class StackGame {
         Render.stop(this.render);
         // remove input listeners to avoid duplicates or stuck handlers
         try {
-            window.removeEventListener('keydown', this._onKeyDown);
-            window.removeEventListener('keyup', this._onKeyUp);
-            window.removeEventListener('blur', this._clearKeyState);
+            if (this.playerController && typeof this.playerController.removeListeners === 'function') {
+                this.playerController.removeListeners();
+            }
         } catch (e) {}
         World.clear(this.world, true);
         Engine.clear(this.engine);
@@ -580,6 +411,10 @@ class StackGame {
         this.canvas.parentElement.classList.remove('failed');
 
         this._initEngine(); // re-create engine/render
+        // recreate controller so it re-binds listeners (only if a keymap was provided)
+        if (this.keymap && Object.keys(this.keymap).length) {
+            this.playerController = new PlayerController(this.keymap);
+        }
         this.spawnNextPiece();
     }
 }
@@ -596,5 +431,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     window.game1 = new StackGame(canv1, keymap1);
     window.game2 = new StackGame(canv2, keymap2);
-    //window.game3 = new StackGame(canv3, keymap3);
+    // create an AI-driven third player (no keymap -> no PlayerController)
+    window.game3 = new StackGame(canv3, null);
+    window.game3.aiController = new AIController({ reactionMs: 110, aggression: 0.7, debug: true });
 });
