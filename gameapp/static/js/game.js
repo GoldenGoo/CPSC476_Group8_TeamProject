@@ -7,10 +7,17 @@ const CONFIG = {
     canvasCssW: 300,
     canvasCssH: 600,
     spawnYOffset: -60,
-    gravityY: 0.4,
+    gravityY: 0.1,
     lateralForce: 0.02,         // instantaneous force applied on keydown
     maxLateralSpeed: 0.05,         // limit horizontal speed
     angularImpulse: 0.005,      // rotation impulse
+    angularDamping: 0.02,      // air/friction damping for rotation/linear when released
+    maxAngularSpeed: 0.25,     // cap angular velocity so pieces don't spin out
+    // soft drop: velocity-based increment applied while holding the down key
+    // `softDropIncrement` is added to the current downward velocity each tick (then capped)
+    softDropIncrement: 0.25,
+    // cap for how fast a soft-dropped piece can fall (units: px/tick-ish)
+    maxSoftDropSpeed: 6.0,
     timeToConsiderRestMs: 350,  // time of low speed to mark resting
 };
 
@@ -18,42 +25,95 @@ const CONFIG = {
 function randomColor() { return `hsl(${Math.floor(Math.random()*360)},70%,50%)`; }
 
 // Base piece factory: returns a Matter body positioned at (x,y)
+// Supported types: 'rectangle', 'diamond', 'star', 'triangle', 'pentagon', 'roman'
+// `size` is a tunable base size — functions scale shapes from that base.
 function createPiece(type, x, y, size, options = {}) {
-    if (type === 'circle') {
-        return Bodies.circle(x, y, size, options);
+    type = (type || '').toLowerCase();
+    const o = Object.assign({}, options);
+
+    switch (type) {
+        case 'rectangle': {
+            const w = Math.round(size * 1.6);
+            const h = Math.round(size);
+            return Bodies.rectangle(x, y, w, h, o);
+        }
+
+        case 'diamond': {
+            // diamond is a rotated square/rect; create via polygon vertices
+            const half = size / 1.25;
+            const verts = [
+                { x: 0, y: -half },
+                { x: half, y: 0 },
+                { x: 0, y: half },
+                { x: -half, y: 0 }
+            ];
+            return Bodies.fromVertices(x, y, [verts], o, true);
+        }
+
+        case 'triangle': {
+            const verts = makeRegularPolygonVertices(3, size);
+            return Bodies.fromVertices(x, y, [verts], o, true);
+        }
+
+        case 'pentagon': {
+            const verts = makeRegularPolygonVertices(5, size);
+            return Bodies.fromVertices(x, y, [verts], o, true);
+        }
+
+        case 'star': {
+            // 5-point star by default; innerRatio tunable via options.innerRatio
+            const points = options.points || 5;
+            const innerRatio = (typeof options.innerRatio === 'number') ? options.innerRatio : 0.45;
+            const verts = makeStarVertices(size, points, innerRatio);
+            return Bodies.fromVertices(x, y, [verts], o, true);
+        }
+
+        case 'semicircle': {
+            // create a solid semicircle (half-disc) by sampling the arc
+            // radius: use provided size as radius
+            const radius = size;
+            // choose number of segments based on size for smoothness
+            const segments = Math.max(8, Math.round(radius / 1.5));
+            const verts = [];
+            const angleStep = Math.PI / segments; // semicircle spans PI radians
+            for (let i = 0; i <= segments; i++) {
+                const angle = i * angleStep;
+                const xOff = Math.cos(angle) * radius;
+                const yOff = Math.sin(angle) * radius;
+                verts.push({ x: xOff, y: yOff });
+            }
+            // Bodies.fromVertices will decompose if necessary
+            return Bodies.fromVertices(x, y, [verts], o, true);
+        }
+
+
+        default: {
+            // fallback to a rectangle if an unknown type is given
+            const w = Math.round(size * 1.6);
+            const h = Math.round(size);
+            return Bodies.rectangle(x, y, w, h, o);
+        }
     }
-    if (type === 'polygon') {
-        const sides = options.sides || (3 + Math.floor(Math.random()*5));
-        return Bodies.polygon(x, y, sides, size, options);
-    }
-    if (type === 'star' || type === 'blob') {
-        // Build vertex array, then use fromVertices via Bodies.fromVertices
-        const verts = (type === 'star') ? makeStarVertices(size, 5, 0.45 + Math.random()*0.25)
-                                    : makeBlobVertices(size, 5 + Math.floor(Math.random()*4), 0.25 + Math.random()*0.3);
-        // Provide centered vertices
-        const body = Bodies.fromVertices(x, y, [verts], Object.assign({ render: { fillStyle: options.fillStyle } }, options), true);
-        return body;
-    }
-    // fallback rectangle
-    return Bodies.rectangle(x, y, size*1.6, size, options);
 }
 
-// Vertex generators
-function makeStarVertices(radius, points, innerRatio) {
+// Helper: regular polygon vertices centered at (0,0)
+function makeRegularPolygonVertices(sides, radius) {
     const verts = [];
-    for (let i=0;i<points*2;i++){
-        const angle = (Math.PI*2/(points*2))*i - Math.PI/2;
-        const r = (i%2===0) ? radius : radius*innerRatio;
-        verts.push({ x: Math.cos(angle)*r, y: Math.sin(angle)*r });
+    for (let i = 0; i < sides; i++) {
+        const theta = (Math.PI * 2 * i) / sides - Math.PI / 2;
+        verts.push({ x: Math.cos(theta) * radius, y: Math.sin(theta) * radius });
     }
     return verts;
 }
-function makeBlobVertices(radius, points, noise) {
+
+// Helper: star vertices (alternating outer/inner radii)
+function makeStarVertices(radius, points, innerRatio) {
     const verts = [];
-    for (let i=0;i<points;i++){
-        const angle = (Math.PI*2/points)*i;
-        const offset = radius * (1 + (Math.random()-0.5)*noise);
-        verts.push({ x: Math.cos(angle)*offset, y: Math.sin(angle)*offset });
+    const total = points * 2;
+    for (let i = 0; i < total; i++) {
+        const angle = (Math.PI * 2 * i) / total - Math.PI / 2;
+        const r = (i % 2 === 0) ? radius : radius * innerRatio;
+        verts.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
     }
     return verts;
 }
@@ -342,6 +402,7 @@ class StackGame {
             const k = e.key.toLowerCase();
             if (k === this.keymap.left) this._keyState.left = true;
             if (k === this.keymap.right) this._keyState.right = true;
+            if (k === this.keymap.down) this._keyState.down = true;
             if (k === this.keymap.rotCCW) this._keyState.rotCCW = true;
             if (k === this.keymap.rotCW) this._keyState.rotCW = true;
             // prevent default to stop page scroll for some keys
@@ -351,29 +412,50 @@ class StackGame {
             const k = e.key.toLowerCase();
             if (k === this.keymap.left) this._keyState.left = false;
             if (k === this.keymap.right) this._keyState.right = false;
+            if (k === this.keymap.down) this._keyState.down = false;
             if (k === this.keymap.rotCCW) this._keyState.rotCCW = false;
             if (k === this.keymap.rotCW) this._keyState.rotCW = false;
         };
+        // clear keys when window loses focus so boosts don't stick
+        this._clearKeyState = () => {
+            this._keyState.left = false;
+            this._keyState.right = false;
+            this._keyState.down = false;
+            this._keyState.rotCCW = false;
+            this._keyState.rotCW = false;
+        };
         window.addEventListener('keydown', this._onKeyDown);
         window.addEventListener('keyup', this._onKeyUp);
+        window.addEventListener('blur', this._clearKeyState);
     }
 
     spawnNextPiece() {
         if (this.failed) return;
         if (this.activePiece) return; // only one at a time
 
-        const size = 18 + Math.random()*28;
-        const types = ['circle','polygon','star','blob'];
-        const type = types[Math.floor(Math.random()*types.length)];
-        const x = this.width/2;
+        // tunable base size
+        const size = 18 + Math.random() * 28;
+        // use only the new shape types
+        const types = ['rectangle', 'diamond', 'triangle', 'pentagon', 'star', 'semicircle'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const x = this.width / 2;
         const y = CONFIG.spawnYOffset;
 
         const fill = randomColor();
-        const options = { restitution: 0.0, friction: 0.1, density: 0.0025, render: { fillStyle: fill }, label: 'FALLING' };
+        const options = {
+            restitution: 0.0,
+            friction: 0.1,
+            density: 0.0025,
+            render: { fillStyle: fill },
+            label: 'FALLING'
+        };
 
         const body = createPiece(type, x, y, size, options);
         body.label = 'FALLING';
         Body.setAngularVelocity(body, 0);
+        // give some air/friction so rotation decays when player stops applying torque
+        body.frictionAir = CONFIG.angularDamping;
+
         World.add(this.world, body);
         this.activePiece = { body, spawnedAt: Date.now(), settledSince: null };
     }
@@ -390,19 +472,44 @@ class StackGame {
             Body.applyForce(body, body.position, { x: CONFIG.lateralForce * body.mass, y: 0 });
         }
 
-        // rotation control
+        // rotation control: adjust angular velocity directly while key is pressed
+        // and decelerate quickly when released so rotation stops without applying linear forces
+        const av = body.angularVelocity;
         if (this._keyState.rotCCW) {
-            Body.applyForce(body, { x: body.position.x, y: body.position.y - 1 }, { x: 0, y: 0 }); // not null
-            Body.setAngularVelocity(body, body.angularVelocity - CONFIG.angularImpulse);
-        }
-        if (this._keyState.rotCW) {
-            Body.setAngularVelocity(body, body.angularVelocity + CONFIG.angularImpulse);
+            const newAv = av - CONFIG.angularImpulse;
+            Body.setAngularVelocity(body, Math.max(-CONFIG.maxAngularSpeed, newAv));
+        } else if (this._keyState.rotCW) {
+            const newAv = av + CONFIG.angularImpulse;
+            Body.setAngularVelocity(body, Math.min(CONFIG.maxAngularSpeed, newAv));
+        } else {
+            // no rotation keys pressed -> apply quick angular deceleration toward zero
+            const decel = Math.max(CONFIG.angularImpulse * 2, 0.01);
+            if (av > 0) {
+                const newAv = Math.max(0, av - decel);
+                Body.setAngularVelocity(body, newAv);
+            } else if (av < 0) {
+                const newAv = Math.min(0, av + decel);
+                Body.setAngularVelocity(body, newAv);
+            }
         }
 
         // limit horizontal velocity
         const vx = body.velocity.x;
         if (Math.abs(vx) > CONFIG.maxLateralSpeed) {
             Body.setVelocity(body, { x: Math.sign(vx) * CONFIG.maxLateralSpeed, y: body.velocity.y });
+        }
+
+        // cap angular velocity so pieces don't spin forever
+        const avCap = body.angularVelocity;
+        if (Math.abs(avCap) > CONFIG.maxAngularSpeed) {
+            Body.setAngularVelocity(body, Math.sign(avCap) * CONFIG.maxAngularSpeed);
+        }
+
+        // soft drop: while down key held, gently increase downward velocity, capped
+        if (this._keyState.down) {
+            const vy = body.velocity.y || 0;
+            const newVy = Math.min(vy + CONFIG.softDropIncrement, CONFIG.maxSoftDropSpeed);
+            Body.setVelocity(body, { x: body.velocity.x, y: newVy });
         }
 
         this.lastMoveTs = Date.now();
@@ -451,6 +558,12 @@ class StackGame {
         // simpler approach might be to rebuild the instance
         Runner.stop(this.runner);
         Render.stop(this.render);
+        // remove input listeners to avoid duplicates or stuck handlers
+        try {
+            window.removeEventListener('keydown', this._onKeyDown);
+            window.removeEventListener('keyup', this._onKeyUp);
+            window.removeEventListener('blur', this._clearKeyState);
+        } catch (e) {}
         World.clear(this.world, true);
         Engine.clear(this.engine);
 
@@ -473,8 +586,8 @@ class StackGame {
 
 
 window.addEventListener('DOMContentLoaded', () => {
-    const keymap1 = { left: 'a', right: 'd', rotCCW: 'q', rotCW: 'e' };
-    const keymap2 = { left: 'j', right: 'l', rotCCW: 'u', rotCW: 'o' };
+    const keymap1 = { left: 'a', right: 'd', down: 's', rotCCW: 'q', rotCW: 'e' };
+    const keymap2 = { left: 'j', right: 'l', down: 'k', rotCCW: 'u', rotCW: 'o' };
     //const keymap3 = { left: 'arrowleft', right: 'arrowright', rotCCW: 'comma', rotCW: 'period' }; // just for testing
 
     const canv1 = document.getElementById('gameCanvas1');
