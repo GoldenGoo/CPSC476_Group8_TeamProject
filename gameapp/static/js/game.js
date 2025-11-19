@@ -418,10 +418,18 @@ class StackGame {
         if (!screen) return;
         const overlay = document.createElement('div');
         overlay.className = 'restart-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.tabIndex = -1;
         overlay.style.display = 'none';
+        // Ensure overlay is above the canvas even if the canvas creates a stacking context
+        overlay.style.zIndex = '9999';
+        overlay.style.pointerEvents = 'auto';
 
         const modal = document.createElement('div');
         modal.className = 'restart-modal';
+        // make sure modal sits above overlay background
+        modal.style.zIndex = '10000';
         const p = document.createElement('p');
         p.textContent = 'Restart?';
         modal.appendChild(p);
@@ -472,18 +480,23 @@ class StackGame {
         window.addEventListener('keydown', this._keyHandler);
 
         this._overlay = overlay;
+        console.log('[StackGame] restart overlay created for canvas', this.canvas && this.canvas.id);
     }
 
     _showRestartOverlay() {
         if (!this._overlay) return;
+        this._overlay.setAttribute('aria-hidden', 'false');
         this._overlay.style.display = 'flex';
         this._overlayVisible = true;
+        console.log('[StackGame] showing restart overlay for canvas', this.canvas && this.canvas.id);
     }
 
     _hideRestartOverlay() {
         if (!this._overlay) return;
+        this._overlay.setAttribute('aria-hidden', 'true');
         this._overlay.style.display = 'none';
         this._overlayVisible = false;
+        console.log('[StackGame] hiding restart overlay for canvas', this.canvas && this.canvas.id);
     }
 }
 
