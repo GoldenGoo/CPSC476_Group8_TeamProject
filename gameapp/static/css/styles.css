@@ -36,12 +36,47 @@ h1 {
 .game-screen {
     width: 300px;
     height: 600px;
-    border: 4px solid #444;
+    border: 6px solid rgba(255,255,255,0.06); /* subtle neutral default */
     background-color: #111; 
     box-shadow: inset 0 0 10px #000;
     position: relative;
     overflow: hidden;
     border-radius: 12px;
+}
+
+/* Player/AI labeled borders */
+.game-screen.player-1 { border-color: #00bcd4; box-shadow: 0 0 20px rgba(0,188,212,0.08), inset 0 0 10px #000; }
+.game-screen.player-2 { border-color: #ff6b6b; box-shadow: 0 0 20px rgba(255,107,107,0.08), inset 0 0 10px #000; }
+.game-screen.ai       { border-color: #ffd166; box-shadow: 0 0 20px rgba(255,209,102,0.08), inset 0 0 10px #000; }
+
+/* Label badge in the top-left of each screen */
+.screen-wrap { position: relative; display: inline-block; margin-top: 18px; }
+.screen-label {
+    position: absolute;
+    left: 12px;
+    top: -12px; /* move label above the game area to avoid overlap */
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0b0b0b;
+    background: rgba(255,255,255,0.92);
+    z-index: 50;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+    letter-spacing: 0.4px;
+    pointer-events: none; /* don't block clicks */
+}
+
+.player-1-label { background: linear-gradient(90deg,#e0ffff,#00bcd4); color: #054046; }
+.player-2-label { background: linear-gradient(90deg,#ffd5d5,#ff6b6b); color: #2b0a0a; }
+.ai-label { background: linear-gradient(90deg,#fff5cc,#ffd166); color: #442c00; }
+
+/* Add a subtle pulsing effect to the AI label so it's noticeable */
+.ai-label { animation: pulse 3s ease-in-out infinite; }
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.02); opacity: 0.95; }
 }
 
 .game-screen canvas {
@@ -53,6 +88,37 @@ h1 {
 .game-screen.failed { 
     box-shadow: 0 0 0 4px rgba(255,0,0,0.6); 
 }
+
+/* Restart overlay shown for each player's game area on fail */
+.game-screen .restart-overlay {
+    position: absolute;
+    inset: 0;
+    display: none; /* toggled by JS */
+    align-items: center;
+    justify-content: center;
+    z-index: 60; /* above canvas */
+    background: rgba(0, 0, 0, 0.5);
+}
+.game-screen .restart-modal {
+    background: rgba(18,18,18,0.98);
+    padding: 20px 28px;
+    border-radius: 10px;
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.8), 0 0 0 4px rgba(255,255,255,0.02) inset;
+}
+.game-screen .restart-modal p { font-size: 20px; margin: 0 0 12px 0; font-weight: 700;}
+.game-screen .restart-confirm {
+    background: #00bcd4;
+    border: none;
+    color: #042; 
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.game-screen .restart-confirm:hover { opacity: 0.95 }
+.game-screen .restart-hint { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 8px; }
 
 
 

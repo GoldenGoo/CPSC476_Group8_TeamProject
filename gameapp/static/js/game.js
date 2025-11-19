@@ -8,8 +8,8 @@ const CONFIG = {
     canvasCssH: 600,
     spawnYOffset: -60,
     gravityY: 0.1,
-    lateralForce: 0.02,         // instantaneous force applied on keydown
-    maxLateralSpeed: 0.05,         // limit horizontal speed
+    lateralForce: 0.01,         // instantaneous force applied on keydown
+    maxLateralSpeed: 0.03,         // limit horizontal speed
     angularImpulse: 0.005,      // rotation impulse
     angularDamping: 0.02,      // air/friction damping for rotation/linear when released
     maxAngularSpeed: 0.25,     // cap angular velocity so pieces don't spin out
@@ -30,6 +30,9 @@ class StackGame {
         this.canvas = canvas;
         this.keymap = keymap; // { left, right, CCW, CW } key strings
         this.failed = false;
+        this._overlay = null;
+        this._overlayVisible = false;
+        this.restartKey = (this.keymap && this.keymap.down) ? this.keymap.down.toLowerCase() : null; // used as keyboard shortcut for confirm
         this.activePiece = null;
         this.stackBodies = [];
         this.lastMoveTs = 0;
@@ -46,6 +49,7 @@ class StackGame {
         this._sensorOverlaps = new Set();
 
         this._initEngine();
+        this._createRestartOverlay();
         this.spawnNextPiece();
     }
 
@@ -363,25 +367,14 @@ class StackGame {
             Runner.stop(this.runner);
             Render.stop(this.render);
         } catch (e) {}
-        // Optional, but we  set all bodies static
+        // Optional, but we set all bodies static
         Composite.allBodies(this.world).forEach(b => { if (!b.isStatic) Body.setStatic(b, true); });
         // Mark failure visually (e.g., tint canvas), done by adding an overlay class
         this.canvas.parentElement.classList.add('failed');
         console.log('Game failed on canvas', this.canvas.id, 'body', body.id);
    
-        // check whether all registered games have finished, then prompt once to restart page
-        setTimeout(() => {
-            const all = (window.stackGames || []).filter(g => g && typeof g.failed === 'boolean');
-            if (all.length === 0) return;
-            const allFailed = all.every(g => g.failed);
-            if (!allFailed) return;
-            if (window._restartPromptShown) return;
-            window._restartPromptShown = true;
-            // simple popup restart, reload page if user confirms
-            if (confirm('All players have finished. Restart the game?')) {
-                location.reload();
-            }
-        }, 20);
+        // show only a per-canvas restart overlay so players can individually restart
+        setTimeout(() => this._showRestartOverlay(), 20);
     }
 
     reset() {
@@ -398,8 +391,7 @@ class StackGame {
         World.clear(this.world, true);
         Engine.clear(this.engine);
 
-        // on reset, clear failed state in the global registry so other games aren't blocked
-        window._restartPromptShown = false;
+        // per-canvas restart overlay will be hidden; no global prompt used anymore
 
         // cleanup DOM render canvas pixel buffer (keep element)
         const ctx = this.canvas.getContext('2d');
@@ -409,6 +401,8 @@ class StackGame {
         this.activePiece = null;
         this.stackBodies = [];
         this.canvas.parentElement.classList.remove('failed');
+        // hide any restart overlay if present
+        try { this._hideRestartOverlay(); } catch (e) {}
 
         this._initEngine(); // re-create engine/render
         // recreate controller so it re-binds listeners (only if a keymap was provided)
@@ -416,6 +410,80 @@ class StackGame {
             this.playerController = new PlayerController(this.keymap);
         }
         this.spawnNextPiece();
+    }
+
+    // Creates a minimal overlay element for per-canvas restart confirmation.
+    _createRestartOverlay() {
+        const screen = this.canvas.parentElement;
+        if (!screen) return;
+        const overlay = document.createElement('div');
+        overlay.className = 'restart-overlay';
+        overlay.style.display = 'none';
+
+        const modal = document.createElement('div');
+        modal.className = 'restart-modal';
+        const p = document.createElement('p');
+        p.textContent = 'Restart?';
+        modal.appendChild(p);
+
+        const btn = document.createElement('button');
+        btn.className = 'restart-confirm';
+        btn.textContent = 'Confirm';
+        modal.appendChild(btn);
+
+        // hint for keyboard confirmation, use provided key if available
+        const hint = document.createElement('div');
+        hint.className = 'restart-hint';
+        hint.textContent = this.restartKey ? `Press '${this.restartKey.toUpperCase()}' to confirm` : '';
+        modal.appendChild(hint);
+
+        overlay.appendChild(modal);
+        screen.appendChild(overlay);
+
+        // click handler
+        btn.addEventListener('click', () => {
+            this._hideRestartOverlay();
+            this.reset();
+        });
+
+        // close with Escape to hide overlay
+        overlay.addEventListener('click', (evt) => {
+            if (evt.target === overlay) {
+                this._hideRestartOverlay();
+            }
+        });
+
+        // keyboard handler - only while overlay is visible
+        this._keyHandler = (e) => {
+            if (!this._overlayVisible) return;
+            if (!e || !e.key) return;
+            const key = e.key.toLowerCase();
+            // confirm if matches restart key
+            if (this.restartKey && key === this.restartKey.toLowerCase()) {
+                this._hideRestartOverlay();
+                this.reset();
+            }
+            // close overlay on Escape
+            if (key === 'escape') {
+                this._hideRestartOverlay();
+            }
+        };
+
+        window.addEventListener('keydown', this._keyHandler);
+
+        this._overlay = overlay;
+    }
+
+    _showRestartOverlay() {
+        if (!this._overlay) return;
+        this._overlay.style.display = 'flex';
+        this._overlayVisible = true;
+    }
+
+    _hideRestartOverlay() {
+        if (!this._overlay) return;
+        this._overlay.style.display = 'none';
+        this._overlayVisible = false;
     }
 }
 
