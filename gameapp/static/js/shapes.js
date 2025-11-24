@@ -70,6 +70,12 @@
                 const radius = size;
                 const verts = makeStarVertices(radius, points, innerRatio);
                 
+                // Adding a border around the star shapes, because they have visible seams from floating point errors
+                const fillColor = o.render.fillStyle || randomColor();
+                o.render.fillStyle = fillColor;
+                o.render.strokeStyle = fillColor;
+                o.render.lineWidth = Math.max(o.render.lineWidth || 0, 1.5);
+                
                 return Bodies.fromVertices(x, y, [verts], o, true);
             }
 
