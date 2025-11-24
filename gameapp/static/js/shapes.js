@@ -1,6 +1,6 @@
 // Shape factory and helpers extracted from game.js
 (function(window, Matter){
-    const { Bodies } = Matter;
+    const { Bodies, Body } = Matter;
 
     function randomColor() { return `hsl(${Math.floor(Math.random()*360)},70%,50%)`; }
 
@@ -15,11 +15,18 @@
 
     function makeStarVertices(radius, points, innerRatio) {
         const verts = [];
-        const total = points * 2;
-        for (let i = 0; i < total; i++) {
-            const angle = (Math.PI * 2 * i) / total - Math.PI / 2;
+        const totalVertices = points * 2;
+        const step = (Math.PI * 2) / totalVertices;
+        
+        for (let i = 0; i < totalVertices; i++) {
             const r = (i % 2 === 0) ? radius : radius * innerRatio;
-            verts.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
+            const angle = i * step - Math.PI / 2;
+            
+            // Generate vertices relative to (0, 0)
+            verts.push({
+                x: Math.cos(angle) * r,
+                y: Math.sin(angle) * r
+            });
         }
         return verts;
     }
@@ -36,12 +43,13 @@
             }
 
             case 'diamond': {
-                const half = size / 1.25;
+                const vertExt = Math.round(size * 1.6);    // extend vertical points
+                const horizHalf = Math.round(size * 0.6);  // narrower horizontal half-width
                 const verts = [
-                    { x: 0, y: -half },
-                    { x: half, y: 0 },
-                    { x: 0, y: half },
-                    { x: -half, y: 0 }
+                    { x: 0, y: -vertExt },
+                    { x: horizHalf, y: 0 },
+                    { x: 0, y: vertExt },
+                    { x: -horizHalf, y: 0 }
                 ];
                 return Bodies.fromVertices(x, y, [verts], o, true);
             }
@@ -58,8 +66,10 @@
 
             case 'star': {
                 const points = options.points || 5;
-                const innerRatio = (typeof options.innerRatio === 'number') ? options.innerRatio : 0.45;
-                const verts = makeStarVertices(size, points, innerRatio);
+                const innerRatio = (typeof options.innerRatio === 'number') ? options.innerRatio : 0.5;
+                const radius = size;
+                const verts = makeStarVertices(radius, points, innerRatio);
+                
                 return Bodies.fromVertices(x, y, [verts], o, true);
             }
 
@@ -89,8 +99,7 @@
     window.ShapeFactory = {
         randomColor,
         createPiece,
-        makeRegularPolygonVertices,
-        makeStarVertices
+        makeRegularPolygonVertices
     };
 
 })(window, Matter);

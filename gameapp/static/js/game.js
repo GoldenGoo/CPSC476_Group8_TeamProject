@@ -317,7 +317,7 @@ class StackGame {
         if (this.activePiece) return; // only one at a time
 
         // tunable base size
-        const size = 18 + Math.random() * 28;
+        const size = 25 + Math.random() * 10;
         // use only the new shape types
         const types = ['rectangle', 'diamond', 'triangle', 'pentagon', 'star', 'semicircle'];
         const type = types[Math.floor(Math.random() * types.length)];
@@ -329,10 +329,11 @@ class StackGame {
             restitution: 0.0,
             friction: 0.1,
             density: 0.0025,
-            render: { fillStyle: fill },
+            render: { fillStyle: fill},
             label: 'FALLING'
         };
 
+        // Default body is a pink rectangle
         const body = (window.ShapeFactory && window.ShapeFactory.createPiece) ? window.ShapeFactory.createPiece(type, x, y, size, options) : Bodies.rectangle(x,y,Math.round(size*1.6),Math.round(size), options);
         body.label = 'FALLING';
         Body.setAngularVelocity(body, 0);
@@ -342,9 +343,6 @@ class StackGame {
         World.add(this.world, body);
         this.activePiece = { body, spawnedAt: Date.now(), settledSince: null };
     }
-
-    // input application delegated to controllers: `playerController` and/or `aiController`.
-
   
     _afterUpdate() {
         if (this.failed) return;
@@ -512,7 +510,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     window.game1 = new StackGame(canv1, keymap1);
     window.game2 = new StackGame(canv2, keymap2);
-    // create an AI-driven third player (no keymap -> no PlayerController)
+    // AI-driven third player (no keymap -> no PlayerController)
     window.game3 = new StackGame(canv3, null);
     window.game3.aiController = new AIController({ reactionMs: 110, aggression: 0.7, debug: true });
 });
