@@ -1,3 +1,7 @@
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import Score
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -36,3 +40,19 @@ def register(request):
             return redirect("login")  # redirect to your login page
 
     return render(request, "accounts/register.html")
+
+@login_required
+@require_POST
+def save_score(request):
+    try:
+        data = json.loads(request.body)
+        score_value = data.get('score')
+        
+        # Create the score record
+        Score.objects.create(
+            user=request.user,
+            score=score_value
+        )
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
