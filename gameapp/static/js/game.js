@@ -293,6 +293,7 @@ class StackGame {
         // update the score (+1 for each piece placed) - might update this to vary based on the size of the shape
         this.score++; 
         console.log("Current Score:", this.score);
+        this._updateScoreDisplay();
 
         // spawn the next piece shortly after
         setTimeout(() => {
@@ -300,6 +301,20 @@ class StackGame {
         }, 160);
     }
 
+    // Helper to update the label visually
+    _updateScoreDisplay() {
+        // Find the label associated with this canvas
+        const wrapper = this.canvas.closest('.screen-wrap');
+        if (wrapper) {
+            const label = wrapper.querySelector('.screen-label');
+            // Keep the original name and append score
+            const baseName = label.getAttribute('data-name') || label.textContent.split(':')[0];
+            // Store original name in attribute if not there so we don't lose it
+            if (!label.getAttribute('data-name')) label.setAttribute('data-name', baseName);
+            
+            label.textContent = `${baseName}: ${this.score}`;
+        }
+    }
 
     _resizeCanvasForDPR() {
         const rect = this.canvas.getBoundingClientRect();
