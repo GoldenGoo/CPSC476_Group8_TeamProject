@@ -28,6 +28,7 @@ const CONFIG = {
 class StackGame {
     constructor(canvas, keymap) {
         this.canvas = canvas;
+        this.score = 0;
         this.keymap = keymap; // { left, right, CCW, CW } key strings
         this.failed = false;
         this._overlay = null;
@@ -289,6 +290,10 @@ class StackGame {
         body.label = 'STACK';
         this.stackBodies.push(body);
 
+        // update the score (+1 for each piece placed) - might update this to vary based on the size of the shape
+        this.score++; 
+        console.log("Current Score:", this.score);
+
         // spawn the next piece shortly after
         setTimeout(() => {
             if (!this.failed) this.spawnNextPiece();
@@ -367,12 +372,50 @@ class StackGame {
         } catch (e) {}
         // Optional, but we set all bodies static
         Composite.allBodies(this.world).forEach(b => { if (!b.isStatic) Body.setStatic(b, true); });
-        // Mark failure visually (e.g., tint canvas), done by adding an overlay class
+
+        // Only save if a human player (i.e. has a keymap) to avoid logging AI scores
+        console.log('Game failed. Final Score:', this.score);
+        if (this.keymap) {
+            this._sendScoreToBackend(this.score);
+        }
+
+        // Mark failure visually (e.g. tint canvas), done by adding an overlay class
         this.canvas.parentElement.classList.add('failed');
         console.log('Game failed on canvas', this.canvas.id, 'body', body.id);
    
         // show only a per-canvas restart overlay so players can individually restart
         setTimeout(() => this._showRestartOverlay(), 20);
+    }
+
+    // Helper to POST data to Django
+    _sendScoreToBackend(finalScore) {
+        // We need the CSRF token for Django POST requests
+        const getCookie = (name) => {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        fetch('/save_score/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ score: finalScore })
+        })
+        .then(response => response.json())
+        .then(data => console.log('Score saved:', data))
+        .catch(error => console.error('Error saving score:', error));
     }
 
     reset() {
