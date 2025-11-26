@@ -454,6 +454,8 @@ class StackGame {
         ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
 
         this.failed = false;
+        this.score = 0;
+        this._updateScoreDisplay();
         this.activePiece = null;
         this.stackBodies = [];
         this.canvas.parentElement.classList.remove('failed');
