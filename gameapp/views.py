@@ -47,11 +47,13 @@ def save_score(request):
     try:
         data = json.loads(request.body)
         score_value = data.get('score')
+        game_mode_value = data.get('game_mode', 'Unknown Player')
         
         # Create the score record
         Score.objects.create(
-            user=request.user,
-            score=score_value
+            user = request.user,
+            score = score_value,
+            game_mode = game_mode_value
         )
         return JsonResponse({'status': 'success'})
     except Exception as e:

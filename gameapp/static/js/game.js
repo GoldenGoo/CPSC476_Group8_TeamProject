@@ -26,9 +26,10 @@ const CONFIG = {
 
 // Main class per canvas screen
 class StackGame {
-    constructor(canvas, keymap) {
+    constructor(canvas, keymap, playerIdentifier = 'standard') {
         this.canvas = canvas;
         this.score = 0;
+        this.playerIdentifier = playerIdentifier;
         this.keymap = keymap; // { left, right, CCW, CW } key strings
         this.failed = false;
         this._overlay = null;
@@ -426,7 +427,10 @@ class StackGame {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({ score: finalScore })
+            body: JSON.stringify({ 
+            score: finalScore, 
+            game_mode: this.playerIdentifier 
+        })
         })
         .then(response => response.json())
         .then(data => console.log('Score saved:', data))
@@ -568,9 +572,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const canv2 = document.getElementById('gameCanvas2');
     const canv3 = document.getElementById('gameCanvas3');
 
-    window.game1 = new StackGame(canv1, keymap1);
-    window.game2 = new StackGame(canv2, keymap2);
+    window.game1 = new StackGame(canv1, keymap1, 'Player 1');
+    window.game2 = new StackGame(canv2, keymap2, 'Player 2');
     // AI-driven third player (no keymap -> no PlayerController)
-    window.game3 = new StackGame(canv3, null);
+    window.game3 = new StackGame(canv3, null, "AI");
     window.game3.aiController = new AIController({ reactionMs: 110, aggression: 0.7, debug: true });
 });
