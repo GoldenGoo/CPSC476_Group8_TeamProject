@@ -4,10 +4,10 @@ from .models import Score
 @admin.register(Score)
 class ScoreAdmin(admin.ModelAdmin):
     # This controls what columns show up in the list
-    list_display = ('user', 'score', 'timestamp', 'game_mode')
+    list_display = ('player_name', 'user', 'score', 'timestamp', 'game_mode')
     
     # This adds a sidebar to filter by date or game mode
     list_filter = ('timestamp', 'game_mode')
     
-    # This adds a search bar to search by username
-    search_fields = ('user__username',)
+    # This adds a search bar to search by username or player name
+    search_fields = ('user__username', 'player_name')

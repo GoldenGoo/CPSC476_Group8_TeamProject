@@ -1,124 +1,145 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Home Page</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #121212;
-            color: #fff;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #121212;
+        color: #fff;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
 
-        /* Main container */
-        .container {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            background: #1f1f1f;
-            padding: 50px;
-            border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.7);
-        }
+      /* Main container */
+      .container {
+        position: relative;
+        z-index: 10;
+        text-align: center;
+        background: #1f1f1f;
+        padding: 50px;
+        border-radius: 20px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+      }
 
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 30px;
-            color: #fff;
-        }
+      h1 {
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        color: #fff;
+      }
 
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-        }
+      .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+      }
 
-        .button {
-            background-color: #ff6f61;
-            color: #fff;
-            text-decoration: none;
-            padding: 12px 30px;
-            font-weight: 600;
-            border-radius: 30px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.7);
-        }
+      .button {
+        background-color: #ff6f61;
+        color: #fff;
+        text-decoration: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 30px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+      }
 
-        .button:hover {
-            background-color: #ff856f;
-            transform: translateY(-2px);
-        }
+      .button:hover {
+        background-color: #ff856f;
+        transform: translateY(-2px);
+      }
 
-        .button.secondary {
-            background-color: #333;
-            color: #ff6f61;
-        }
+      .button.secondary {
+        background-color: #333;
+        color: #ff6f61;
+      }
 
-        .button.secondary:hover {
-            background-color: #444;
-            color: #ff856f;
-        }
+      .button.secondary:hover {
+        background-color: #444;
+        color: #ff856f;
+      }
+
+      .logout-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background-color: #e74c3c;
+        color: #fff;
+        text-decoration: none;
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+        z-index: 20;
+      }
+
+      .logout-btn:hover {
+        background-color: #c0392b;
+        transform: translateY(-2px);
+      }
     </style>
-    <link rel="stylesheet" href="{% static 'css/shape_styles.css' %}">
-</head>
-<body>
+    <link rel="stylesheet" href="{% static 'css/shape_styles.css' %}" />
+  </head>
+  <body>
     <div class="shapes-overlay" aria-hidden="true">
-        <div class="shape circle"></div>
-        <div class="shape rectangle"></div>
-        <div class="shape triangle"></div>
-        <div class="shape hexagon"></div>
-        <div class="shape pentagon"></div>
-        <div class="shape star"></div>
-        <div class="shape circle"></div>
-        <div class="shape triangle"></div>
-        <div class="shape rectangle"></div>
-        <div class="shape hexagon"></div>
-        <div class="shape pentagon"></div>
-        <div class="shape star"></div>
+      <div class="shape circle"></div>
+      <div class="shape rectangle"></div>
+      <div class="shape triangle"></div>
+      <div class="shape hexagon"></div>
+      <div class="shape pentagon"></div>
+      <div class="shape star"></div>
+      <div class="shape circle"></div>
+      <div class="shape triangle"></div>
+      <div class="shape rectangle"></div>
+      <div class="shape hexagon"></div>
+      <div class="shape pentagon"></div>
+      <div class="shape star"></div>
     </div>
 
-    <script src="{% static 'js/shapes_animation.js' %}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    if ('speechSynthesis' in window) {
-        
-        const messages = [
-            "Click Start Game to play the game",
-            "Click How to Play to learn about the instructions"
-        ];
+    <a href="{% url 'logout' %}" class="logout-btn">🚪 Logout</a>
 
-        messages.forEach((msg, index) => {
+    <script src="{% static 'js/shapes_animation.js' %}"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        if ("speechSynthesis" in window) {
+          const messages = [
+            "Click Start Game to play the game",
+            "Click How to Play to learn about the instructions",
+          ];
+
+          messages.forEach((msg, index) => {
             const utterance = new SpeechSynthesisUtterance(msg);
-            utterance.rate = 1;  
-            utterance.pitch = 1;  
-            
+            utterance.rate = 1;
+            utterance.pitch = 1;
+
             utterance.delay = index * 1000;
             window.speechSynthesis.speak(utterance);
-        });
-    } else {
-        console.warn('Speech Synthesis not supported in this browser.');
-    }
-});
-</script>
-
-
+          });
+        } else {
+          console.warn("Speech Synthesis not supported in this browser.");
+        }
+      });
+    </script>
 
     <!-- Main container -->
     <div class="container">
-        <h1>Welcome to the Game!</h1>
-        <div class="button-group">
-            <a href="{% url 'game' %}" class="button">Start Game</a>
-            <a href="{% url 'how_to_play' %}" class="button secondary">How to Play</a>
-        </div>
+      <h1>Welcome to the Game!</h1>
+      <div class="button-group">
+        <a href="{% url 'game' %}" class="button">Start Game</a>
+        <a href="{% url 'scores' %}" class="button secondary">View Scores</a>
+        <a href="{% url 'how_to_play' %}" class="button secondary"
+          >How to Play</a
+        >
+      </div>
     </div>
-
-</body>
+  </body>
 </html>

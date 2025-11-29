@@ -296,24 +296,26 @@ class StackGame {
         console.log("Current Score:", this.score);
         this._updateScoreDisplay();
 
+        // Play voice-over for milestone scores (multiples of 5)
+        if (this.score > 0 && this.score % 5 === 0) {
+            this._playMilestoneVoiceOver();
+        }
+
         // spawn the next piece shortly after
         setTimeout(() => {
             if (!this.failed) this.spawnNextPiece();
         }, 160);
     }
 
-    // Helper to update the label visually
+    // Helper to update the score display visually
     _updateScoreDisplay() {
-        // Find the label associated with this canvas
+        // Find the score display associated with this canvas
         const wrapper = this.canvas.closest('.screen-wrap');
         if (wrapper) {
-            const label = wrapper.querySelector('.screen-label');
-            // Keep the original name and append score
-            const baseName = label.getAttribute('data-name') || label.textContent.split(':')[0];
-            // Store original name in attribute if not there so we don't lose it
-            if (!label.getAttribute('data-name')) label.setAttribute('data-name', baseName);
-            
-            label.textContent = `${baseName}: ${this.score}`;
+            const scoreDisplay = wrapper.querySelector('.score-display');
+            if (scoreDisplay) {
+                scoreDisplay.textContent = this.score;
+            }
         }
     }
 
@@ -399,8 +401,69 @@ class StackGame {
         this.canvas.parentElement.classList.add('failed');
         console.log('Game failed on canvas', this.canvas.id, 'body', body.id);
    
+        // Play voice-over for player loss
+        this._playLoseVoiceOver();
+        
         // show only a per-canvas restart overlay so players can individually restart
         setTimeout(() => this._showRestartOverlay(), 20);
+    }
+
+    _playLoseVoiceOver() {
+        // Get custom player name from window.playerNames if available
+        let playerName = this.playerIdentifier;
+        if (window.playerNames) {
+            if (this.playerIdentifier === 'Player 1') {
+                playerName = window.playerNames.player1 || this.playerIdentifier;
+            } else if (this.playerIdentifier === 'Player 2') {
+                playerName = window.playerNames.player2 || this.playerIdentifier;
+            }
+        }
+        
+        // Create a message based on player name
+        let message = `${playerName} has lost the game with a score of ${this.score}`;
+        
+        // Use Web Speech API to play voice-over
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            window.speechSynthesis.cancel(); // cancel any previous speech
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    _playMilestoneVoiceOver() {
+        // Get custom player name from window.playerNames if available
+        let playerName = this.playerIdentifier;
+        if (window.playerNames) {
+            if (this.playerIdentifier === 'Player 1') {
+                playerName = window.playerNames.player1 || this.playerIdentifier;
+            } else if (this.playerIdentifier === 'Player 2') {
+                playerName = window.playerNames.player2 || this.playerIdentifier;
+            }
+        }
+        
+        //  encouraging messages for milestone scores
+        const messages = [
+            `${playerName} is doing well! Score: ${this.score}`,
+            `Nice work ${playerName}! You have ${this.score} points`,
+            `${playerName} reached ${this.score} points!`,
+            `Impressive ${playerName}! Current score is ${this.score}`,
+            `${playerName} is on fire with ${this.score} points!`
+        ];
+        
+        // Pick a random message
+        const message = messages[Math.floor(Math.random() * messages.length)];
+        
+        // Use Web Speech API to play voice-over
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            window.speechSynthesis.speak(utterance);
+        }
     }
 
     // Helper to POST data to Django
@@ -421,6 +484,18 @@ class StackGame {
             return cookieValue;
         }
 
+        // Get the custom player name from window.playerNames
+        let playerName = 'Unknown Player';
+        if (window.playerNames) {
+            if (this.playerIdentifier === 'Player 1') {
+                playerName = window.playerNames.player1 || 'Player 1';
+            } else if (this.playerIdentifier === 'Player 2') {
+                playerName = window.playerNames.player2 || 'Player 2';
+            } else if (this.playerIdentifier === 'AI') {
+                playerName = 'AI';
+            }
+        }
+
         fetch('/save_score/', {
             method: 'POST',
             headers: {
@@ -428,9 +503,10 @@ class StackGame {
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({ 
-            score: finalScore, 
-            game_mode: this.playerIdentifier 
-        })
+                score: finalScore, 
+                game_mode: this.playerIdentifier,
+                player_name: playerName
+            })
         })
         .then(response => response.json())
         .then(data => console.log('Score saved:', data))
@@ -572,9 +648,12 @@ window.addEventListener('DOMContentLoaded', () => {
     const canv2 = document.getElementById('gameCanvas2');
     const canv3 = document.getElementById('gameCanvas3');
 
-    window.game1 = new StackGame(canv1, keymap1, 'Player 1');
-    window.game2 = new StackGame(canv2, keymap2, 'Player 2');
-    // AI-driven third player (no keymap -> no PlayerController)
-    window.game3 = new StackGame(canv3, null, "AI");
-    window.game3.aiController = new AIController({ reactionMs: 110, aggression: 0.7, debug: true });
+    // Wait for player names to be set before initializing games
+    window.initializeGames = function() {
+        window.game1 = new StackGame(canv1, keymap1, 'Player 1');
+        window.game2 = new StackGame(canv2, keymap2, 'Player 2');
+        // AI-driven third player (no keymap -> no PlayerController)
+        window.game3 = new StackGame(canv3, null, "AI");
+        window.game3.aiController = new AIController({ reactionMs: 110, aggression: 0.7, debug: true });
+    };
 });

@@ -51,6 +51,42 @@ h1 {
 
 /* Label badge in the top-left of each screen */
 .screen-wrap { position: relative; display: inline-block; margin-top: 18px; }
+
+.score-display {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+    z-index: 10;
+    pointer-events: none;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.player-1 .score-display {
+    background: rgba(0, 188, 212, 0.9);
+    color: #0b0b0b;
+    border: 2px solid #00bcd4;
+}
+
+.player-2 .score-display {
+    background: rgba(255, 107, 107, 0.9);
+    color: #0b0b0b;
+    border: 2px solid #ff6b6b;
+}
+
+.ai .score-display {
+    background: rgba(255, 209, 102, 0.9);
+    color: #0b0b0b;
+    border: 2px solid #ffd166;
+}
 .screen-label {
     position: absolute;
     left: 12px;

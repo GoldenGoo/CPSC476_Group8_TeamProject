@@ -6,7 +6,9 @@ class Score(models.Model):
     score = models.IntegerField()
     timestamp = models.DateTimeField(auto_now_add=True)
     # Tracks if it was Player 1 or Player 2 
-    game_mode = models.CharField(max_length=50, default="standard") 
+    game_mode = models.CharField(max_length=50, default="standard")
+    # Custom player name as entered before game
+    player_name = models.CharField(max_length=50, default="Unknown Player")
 
     def __str__(self):
-        return f"{self.user.username} - {self.score}"
+        return f"{self.player_name} ({self.user.username}) - {self.score}"

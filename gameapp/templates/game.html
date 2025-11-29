@@ -1,53 +1,335 @@
 {% load static %}
 <!DOCTYPE html>
 <html>
-<head>
-  <title> Game Page</title>
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
-  <h1>Lets Play!</h1>
-  <div id="bg-floating-shapes">
-    <span></span><span></span><span></span><span></span><span></span>
-    <span></span><span></span><span></span><span></span><span></span>
-</div>
+  <head>
+    <title>Game Page</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+    <style>
+      /* Player Names Modal */
+      #playerNamesModal {
+        display: flex;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        align-items: center;
+        justify-content: center;
+        animation: modalFadeIn 0.3s;
+      }
 
+      @keyframes modalFadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
 
-  <div class="game-container">
-    <div class="screen-wrap">
-      <div class="screen-label player-1-label">Player 1</div>
-      <div class="game-screen player-1">
-    <div class="bg-shapes"></div>
-    <canvas id="gameCanvas1" width="300" height="600"></canvas>
+      .modal-content {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2a2a3a 100%);
+        padding: 40px;
+        border-radius: 15px;
+        border: 2px solid #00bcd4;
+        box-shadow: 0 0 30px rgba(0, 188, 212, 0.3);
+        max-width: 500px;
+        width: 90%;
+        animation: modalSlideIn 0.3s;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-content h2 {
+        color: #00bcd4;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 1.8em;
+      }
+
+      .player-input-group {
+        margin-bottom: 25px;
+      }
+
+      .player-input-group label {
+        display: block;
+        color: #ffd166;
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 1.1em;
+      }
+
+      .player-input-group input {
+        width: 100%;
+        padding: 12px;
+        font-size: 1em;
+        border: 2px solid #333;
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border-radius: 5px;
+        transition: all 0.3s;
+        box-sizing: border-box;
+      }
+
+      .player-input-group input:focus {
+        outline: none;
+        border-color: #00bcd4;
+        box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .player-input-group.player-1 label {
+        color: #00bcd4;
+      }
+
+      .player-input-group.player-1 input {
+        border-color: rgba(0, 188, 212, 0.3);
+      }
+
+      .player-input-group.player-1 input:focus {
+        border-color: #00bcd4;
+        box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
+      }
+
+      .player-input-group.player-2 label {
+        color: #ff6b6b;
+      }
+
+      .player-input-group.player-2 input {
+        border-color: rgba(255, 107, 107, 0.3);
+      }
+
+      .player-input-group.player-2 input:focus {
+        border-color: #ff6b6b;
+        box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+      }
+
+      .modal-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+      }
+
+      .modal-btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 1em;
+        font-weight: 700;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .start-btn {
+        background: linear-gradient(135deg, #00bcd4, #005a7a);
+        color: #fff;
+      }
+
+      .start-btn:hover {
+        background: linear-gradient(135deg, #00d4e8, #007a9a);
+        box-shadow: 0 0 20px rgba(0, 188, 212, 0.4);
+      }
+
+      .start-btn:active {
+        transform: scale(0.98);
+      }
+
+      .reset-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: #888;
+        border: 2px solid #333;
+      }
+
+      .reset-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #666;
+        color: #aaa;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .player-name-display {
+        text-align: center;
+        color: #888;
+        font-size: 0.9em;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Player Names Modal -->
+    <div id="playerNamesModal">
+      <div class="modal-content">
+        <h2>🎮 Player Setup</h2>
+
+        <div class="player-input-group player-1">
+          <label for="player1Name">👤 Player 1 Name:</label>
+          <input
+            type="text"
+            id="player1Name"
+            placeholder="Enter Player 1 name"
+            value="Player 1"
+            maxlength="20"
+          />
+          <div class="player-name-display" id="p1Display"></div>
+        </div>
+
+        <div class="player-input-group player-2">
+          <label for="player2Name">👤 Player 2 Name:</label>
+          <input
+            type="text"
+            id="player2Name"
+            placeholder="Enter Player 2 name"
+            value="Player 2"
+            maxlength="20"
+          />
+          <div class="player-name-display" id="p2Display"></div>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="modal-btn start-btn" onclick="startGame()">
+            🎮 Start Game
+          </button>
+          <button class="modal-btn reset-btn" onclick="resetPlayerNames()">
+            🔄 Reset
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="screen-wrap">
-      <div class="screen-label player-2-label">Player 2</div>
-      <div class="game-screen player-2">
-    <div class="bg-shapes"></div>
-    <canvas id="gameCanvas2" width="300" height="600"></canvas>
+    <h1>Lets Play!</h1>
+    <div id="bg-floating-shapes">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="game-container">
+      <div class="screen-wrap">
+        <div class="score-display" id="score1">0</div>
+        <div class="screen-label player-1-label">Player 1</div>
+        <div class="game-screen player-1">
+          <div class="bg-shapes"></div>
+          <canvas id="gameCanvas1" width="300" height="600"></canvas>
+        </div>
+      </div>
+
+      <div class="screen-wrap">
+        <div class="score-display" id="score2">0</div>
+        <div class="screen-label player-2-label">Player 2</div>
+        <div class="game-screen player-2">
+          <div class="bg-shapes"></div>
+          <canvas id="gameCanvas2" width="300" height="600"></canvas>
+        </div>
+      </div>
+
+      <div class="screen-wrap">
+        <div class="score-display" id="score3">0</div>
+        <div class="screen-label ai-label">AI</div>
+        <div class="game-screen ai">
+          <div class="bg-shapes"></div>
+          <canvas id="gameCanvas3" width="300" height="600"></canvas>
+        </div>
       </div>
     </div>
 
-    <div class="screen-wrap">
-      <div class="screen-label ai-label">AI</div>
-      <div class="game-screen ai">
-    <div class="bg-shapes"></div>
-    <canvas id="gameCanvas3" width="300" height="600"></canvas>
-      </div>
-    </div>
+    <!-- load Matter, then the game code -->
+    <script src="{% static 'js/decomp.min.js' %}"></script>
+    <script src="{% static 'js/matter.min.js' %}"></script>
+    <script src="{% static 'js/shapes.js' %}"></script>
+    <script src="{% static 'js/player_controller.js' %}"></script>
+    <script src="{% static 'js/ai_player.js' %}"></script>
+    <!-- Append a version query to bust cache during development -->
+    <script src="{% static 'js/game.js' %}?v=2"></script>
 
-</div>
+    <script>
+      // Player Names Functionality
+      const playerNamesModal = document.getElementById("playerNamesModal");
+      const player1NameInput = document.getElementById("player1Name");
+      const player2NameInput = document.getElementById("player2Name");
 
+      // Update display as user types
+      player1NameInput.addEventListener("input", function () {
+        document.getElementById(
+          "p1Display"
+        ).textContent = `Display: "${this.value}"`;
+      });
 
-  <!-- load Matter, then the game code -->
-  <script src="{% static 'js/decomp.min.js' %}"></script>
-  <script src="{% static 'js/matter.min.js' %}"></script>
-  <script src="{% static 'js/shapes.js' %}"></script>
-  <script src="{% static 'js/player_controller.js' %}"></script>
-  <script src="{% static 'js/ai_player.js' %}"></script>
-  <!-- Append a version query to bust cache during development -->
-  <script src="{% static 'js/game.js' %}?v=2"></script>
-</body>
+      player2NameInput.addEventListener("input", function () {
+        document.getElementById(
+          "p2Display"
+        ).textContent = `Display: "${this.value}"`;
+      });
+
+      function startGame() {
+        const p1Name = player1NameInput.value.trim() || "Player 1";
+        const p2Name = player2NameInput.value.trim() || "Player 2";
+
+        // Store player names globally for use in game.js
+        window.playerNames = {
+          player1: p1Name,
+          player2: p2Name,
+        };
+
+        // Update the screen labels with player names
+        document.querySelector(".player-1-label").textContent = p1Name;
+        document.querySelector(".player-2-label").textContent = p2Name;
+
+        // Hide the modal
+        playerNamesModal.classList.add("hidden");
+
+        // NOW initialize the games
+        window.initializeGames();
+
+        console.log("Game started with players:", p1Name, "and", p2Name);
+      }
+
+      function resetPlayerNames() {
+        player1NameInput.value = "Player 1";
+        player2NameInput.value = "Player 2";
+        document.getElementById("p1Display").textContent = "";
+        document.getElementById("p2Display").textContent = "";
+      }
+
+      // Prevent game keypresses from affecting input fields
+      player1NameInput.addEventListener("keydown", function (event) {
+        event.stopPropagation();
+      });
+
+      player2NameInput.addEventListener("keydown", function (event) {
+        event.stopPropagation();
+      });
+
+      // Allow Enter key to start game
+      document.addEventListener("keypress", function (event) {
+        if (
+          event.key === "Enter" &&
+          !playerNamesModal.classList.contains("hidden")
+        ) {
+          startGame();
+        }
+      });
+
+      // Initialize displays
+      document.getElementById(
+        "p1Display"
+      ).textContent = `Display: "${player1NameInput.value}"`;
+      document.getElementById(
+        "p2Display"
+      ).textContent = `Display: "${player2NameInput.value}"`;
+    </script>
+  </body>
 </html>
