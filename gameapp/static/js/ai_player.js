@@ -97,7 +97,7 @@
             const closeEnough = Math.abs(dx) < Math.max(8, pieceWidth * 0.4);
             this._keyState.down = closeEnough && angOk && (Math.random() < 0.3 * this.options.aggression);
 
-            // rotation: try to reduce angular velocity and approach angle 0
+            // try to reduce angular velocity and approach angle 0
             this._keyState.rotCCW = angDeg > 8;
             this._keyState.rotCW = angDeg < -8;
 

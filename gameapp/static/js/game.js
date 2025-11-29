@@ -13,16 +13,11 @@ const CONFIG = {
     angularImpulse: 0.005,      // rotation impulse
     angularDamping: 0.02,      // air/friction damping for rotation/linear when released
     maxAngularSpeed: 0.25,     // cap angular velocity so pieces don't spin out
-    // soft drop: velocity-based increment applied while holding the down key
-    // `softDropIncrement` is added to the current downward velocity each tick (then capped)
-    softDropIncrement: 0.25,
-    // cap for how fast a soft-dropped piece can fall (units: px/tick-ish)
-    maxSoftDropSpeed: 6.0,
+    softDropIncrement: 0.25, // added to the current downward velocity each tick (then capped)
+    maxSoftDropSpeed: 6.0, // cap for how fast a soft-dropped piece can fall (units: px/tick-ish)
     timeToConsiderRestMs: 350,  // time of low speed to mark resting
 };
 
-// Utility: random color
-// Note: shape creation and helpers moved to `shapes.js` as `window.ShapeFactory`.
 
 // Main class per canvas screen
 class StackGame {
