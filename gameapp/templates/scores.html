@@ -457,11 +457,7 @@
           <tbody>
             {% for score in top_scores %}
             <tr>
-              <td class="rank">
-                {% if forloop.counter == 1 %} 🥇 1st {% elif forloop.counter ==
-                2 %} 🥈 2nd {% elif forloop.counter == 3 %} 🥉 3rd {% else %}
-                #{{ forloop.counter }} {% endif %}
-              </td>
+              <td class="rank">#{{ forloop.counter }}</td>
               <td class="player-name">
                 <strong>{{ score.player_name }}</strong>
               </td>
