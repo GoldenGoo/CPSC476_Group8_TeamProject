@@ -74,6 +74,7 @@ class StackGame {
         const thickness = 120;
         const floor = Bodies.rectangle(this.width/2, this.height + thickness/2, this.width + 400, thickness, { isStatic: true, label: 'FLOOR', render: { visible: true, fillStyle: '#222' }});
         World.add(this.world, floor);
+        this.stackBodies.push(floor);
 
         // sensor geometry
         const sensorThickness = 10;                      // thin strip just outside canvas
@@ -288,6 +289,7 @@ class StackGame {
 
         // update the score (+1 for each piece placed) - might update this to vary based on the size of the shape
         this.score++; 
+        updateAIDifficulty(); // basically, as players score, the AI plays harder.
         console.log("Current Score:", this.score);
         this._updateScoreDisplay();
 
@@ -630,6 +632,25 @@ class StackGame {
         this._overlay.style.display = 'none';
         this._overlayVisible = false;
         console.log('[StackGame] hiding restart overlay for canvas', this.canvas && this.canvas.id);
+    }
+}
+
+function updateAIDifficulty() {
+    const player1Score = window.game1 ? window.game1.score : 0;
+    const player2Score = window.game2 ? window.game2.score : 0;
+    const aiGame = window.game3; 
+
+    if (aiGame && aiGame.controller) {
+        // Use the maximum score of both players
+        const opponentScore = Math.max(player1Score, player2Score);
+
+        // Adaptive Scaling Logic, currently it adds 5% aggression per 10 points of opponent score, this can be configured
+        let multiplier = 1.0 + (opponentScore / 10) * 0.05; 
+        
+        // Testing this out, but it makes the AI slightly less aggressive if its own score is high
+        multiplier -= (aiGame.score / 10) * 0.02;
+
+        aiGame.controller.setAggressionMultiplier(multiplier);
     }
 }
 
