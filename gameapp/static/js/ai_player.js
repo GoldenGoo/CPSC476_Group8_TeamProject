@@ -249,10 +249,13 @@
                 const newVy = Math.min(vy + CONFIG.softDropIncrement, CONFIG.maxSoftDropSpeed);
                 Body.setVelocity(body, { x: body.velocity.x, y: newVy });
             }
-            // update debug overlay each tick if enabled
+            
+            // Update debug overlay based on debug flag
             if (this.options.debug) {
                 this._ensureDebugOverlay(game);
                 this._updateDebugOverlay({ targetX: this._lastTargetX, keyState: this._keyState, lastDecision: this._lastDecision });
+            } else {
+                this._removeDebugOverlay();
             }
         }
 
@@ -277,6 +280,15 @@
                 parent.style.position = parent.style.position || 'relative';
                 parent.appendChild(el);
                 this._debugOverlay = el;
+            } catch (e) {}
+        }
+
+        _removeDebugOverlay() {
+            try {
+                if (this._debugOverlay && this._debugOverlay.parentElement) {
+                    this._debugOverlay.parentElement.removeChild(this._debugOverlay);
+                }
+                this._debugOverlay = null;
             } catch (e) {}
         }
 
