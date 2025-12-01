@@ -1,8 +1,8 @@
-# Score Logging System - Complete Setup ✅
+# Score Logging System - Complete Setup 
 
 ## What's Configured
 
-### 1. Database Model ✅
+### 1. Database Model 
 
 **File:** `gameapp/models.py`
 

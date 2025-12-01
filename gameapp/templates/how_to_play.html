@@ -1,189 +1,345 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>How to Play - Stack Game</title>
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #111;
-            color: #f0f0f0;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            color: #2ecc71;
-            text-align: center;
-        }
-        h2 {
-            color: #f39c12;
-        }
-        .section {
-            margin-bottom: 25px;
-        }
-        ul {
-            margin-left: 20px;
-        }
-        .key {
-            display: inline-block;
-            background-color: #333;
-            padding: 4px 8px;
-            margin: 2px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .canvas-sample {
-            margin-top: 10px;
-            border: 2px solid #f0f0f0;
-            display: inline-block;
-        }
-        .note {
-            background-color: #222;
-            padding: 10px;
-            border-left: 5px solid #f39c12;
-            margin-top: 10px;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        /* 🎤 Buttons */
-        .btn {
-            display: inline-block;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-            margin-right: 10px;
-            margin-bottom: 20px;
-        }
-        .speak-btn {
-            background-color: #2ecc71;
-            color: #111;
-        }
-        .speak-btn:hover {
-            background-color: #27ae60;
-        }
-        .stop-btn {
-            background-color: #e74c3c;
-            color: white;
-            display: none; /* hidden by default */
-        }
-        .stop-btn:hover {
-            background-color: #c0392b;
-        }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        color: #f0f0f0;
+        overflow-x: hidden;
+        position: relative;
+        background-color: #111;
+      }
 
+      /* Background Image */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #111;
+        z-index: -2;
+      }
+
+      /* Dark overlay */
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0);
+        z-index: -1;
+      }
+
+      /* Content container */
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+        z-index: 1;
+      }
+
+      h1 {
+        color: #00bcd4;
+        text-align: center;
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
+
+      h2 {
+        color: #ffd166;
+        font-size: 1.8em;
+        margin-top: 20px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #ff6b6b;
+        padding-bottom: 10px;
+      }
+
+      .section {
+        margin-bottom: 30px;
+        background: rgba(20, 20, 20, 0.85);
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #00bcd4;
+        backdrop-filter: blur(5px);
+      }
+
+      ul {
+        margin-left: 30px;
+        line-height: 1.8;
+      }
+
+      li {
+        margin-bottom: 10px;
+        color: #e0e0e0;
+      }
+
+      p {
+        line-height: 1.8;
+        color: #c0c0c0;
+        margin-bottom: 15px;
+      }
+
+      .key {
+        display: inline-block;
+        background: linear-gradient(135deg, #00bcd4, #0097a7);
+        color: #000;
+        padding: 6px 12px;
+        margin: 2px;
+        border-radius: 4px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .canvas-sample {
+        margin-top: 10px;
+        border: 2px solid #00bcd4;
+        display: inline-block;
+        border-radius: 8px;
+        background: url('{% static "images/baki-anime-background.jpg" %}')
+          center/cover no-repeat;
+        width: 200px;
+        height: 400px;
+        box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
+      }
+
+      .note {
+        background: rgba(255, 209, 102, 0.15);
+        padding: 15px;
+        border-left: 5px solid #ffd166;
+        margin-top: 15px;
+        border-radius: 5px;
+        color: #ffd166;
+        font-style: italic;
+      }
+
+      /* 🎤 Buttons */
+      .btn {
+        display: inline-block;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+        margin-right: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .speak-btn {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: #fff;
+      }
+
+      .speak-btn:hover {
+        background: linear-gradient(135deg, #27ae60, #229954);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(46, 204, 113, 0.4);
+      }
+
+      .stop-btn {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+        display: none;
+      }
+
+      .stop-btn:hover {
+        background: linear-gradient(135deg, #c0392b, #a93226);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+      }
+
+      strong {
+        color: #00bcd4;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="container">
+      <button class="btn speak-btn" onclick="speakPage()">
+        🔊 Read Instructions
+      </button>
+      <button class="btn stop-btn" id="stopBtn" onclick="stopSpeech()">
+        ⛔ Stop
+      </button>
 
-    
-    <button class="btn speak-btn" onclick="speakPage()">🔊 Read Instructions</button>
-    <button class="btn stop-btn" id="stopBtn" onclick="stopSpeech()">⛔ Stop</button>
+      <h1>Stack Frenzy - How to Play</h1>
 
-   
-    <h1>Stack Game - How to Play</h1>
-
-    <div class="section">
+      <div class="section">
         <h2>Objective</h2>
-        <p>The goal of Stack Game is to carefully stack falling shapes on top of each other without letting them fall off the screen. Stack as high as you can without any piece going out of bounds.</p>
-    </div>
+        <p>
+          The goal of Stack Frenzy is to carefully stack falling shapes on top of
+          each other without letting them fall off the screen. Stack as high as
+          you can without any piece going out of bounds.
+        </p>
+      </div>
 
-    <div class="section">
+      <div class="section">
         <h2>Game Elements</h2>
         <ul>
-            <li><strong>Falling Shapes:</strong> Random shapes like circles, polygons, stars, and blobs fall from the top.</li>
-            <li><strong>Stack:</strong> Shapes that have settled become part of your stack.</li>
-            <li><strong>Floor:</strong> The bottom of the canvas where pieces land.</li>
-            <li><strong>Sensors:</strong> Invisible boundaries at left and right edges. If a piece crosses these, the game ends.</li>
+          <li>
+            <strong>Falling Shapes:</strong> Random shapes like circles,
+            polygons, stars, and blobs fall from the top.
+          </li>
+          <li>
+            <strong>Stack:</strong> Shapes that have settled become part of your
+            stack.
+          </li>
+          <li>
+            <strong>Floor:</strong> The bottom of the canvas where pieces land.
+          </li>
+          <li>
+            <strong>Sensors:</strong> Invisible boundaries at left and right
+            edges. If a piece crosses these, the game ends.
+          </li>
         </ul>
-        <div class="canvas-sample">
-            <canvas width="200" height="400"></canvas>
-        </div>
-    </div>
+        <div class="canvas-sample"></div>
+      </div>
 
-    <div class="section">
+      <div class="section">
         <h2>Controls</h2>
         <p>Use the keyboard to move and rotate the falling pieces:</p>
         <ul>
-            <li><strong>Player 1:</strong> <span class="key">A</span> = move left, <span class="key">D</span> = move right, <span class="key">Q</span> = rotate counter-clockwise, <span class="key">E</span> = rotate clockwise, <span class="key">S</span> = drop piece faster</li>
-            <li><strong>Player 2:</strong> <span class="key">J</span> = move left, <span class="key">L</span> = move right, <span class="key">U</span> = rotate counter-clockwise, <span class="key">O</span> = rotate clockwise, <span class="key">K</span> = drop piece faster</li>
+          <li>
+            <strong>Player 1:</strong> <span class="key">A</span> = move left,
+            <span class="key">D</span> = move right,
+            <span class="key">Q</span> = rotate counter-clockwise,
+            <span class="key">E</span> = rotate clockwise,
+            <span class="key">S</span> = drop piece faster
+          </li>
+          <li>
+            <strong>Player 2:</strong> <span class="key">J</span> = move left,
+            <span class="key">L</span> = move right,
+            <span class="key">U</span> = rotate counter-clockwise,
+            <span class="key">O</span> = rotate clockwise,
+            <span class="key">K</span> = drop piece faster
+          </li>
         </ul>
-        <p>Make sure to press keys gently – too much force may tip the stack!</p>
-    </div>
+        <p>
+          Make sure to press keys gently – too much force may tip the stack!
+        </p>
+      </div>
 
-    <div class="section">
+      <div class="section">
         <h2>Gameplay Tips</h2>
         <ul>
-            <li>Plan your placement: Rotate and move the shape while it falls to fit the stack perfectly.</li>
-            <li>Control horizontal movement: Limit horizontal velocity to prevent the piece from sliding off.</li>
-            <li>Use rotation wisely: Some shapes need precise rotation to fit in tight spaces.</li>
-            <li>Stack stable shapes first: Avoid placing irregular shapes at the bottom.</li>
-            <li>Keep an eye on sensors: If any piece touches the left or right boundaries, the game ends immediately.</li>
+          <li>
+            Plan your placement: Rotate and move the shape while it falls to fit
+            the stack perfectly.
+          </li>
+          <li>
+            Control horizontal movement: Limit horizontal velocity to prevent
+            the piece from sliding off.
+          </li>
+          <li>
+            Use rotation wisely: Some shapes need precise rotation to fit in
+            tight spaces.
+          </li>
+          <li>
+            Stack stable shapes first: Avoid placing irregular shapes at the
+            bottom.
+          </li>
+          <li>
+            Keep an eye on sensors: If any piece touches the left or right
+            boundaries, the game ends immediately.
+          </li>
         </ul>
         <div class="note">
-            Tip: The faster you react, the higher you can stack! But be careful not to rush – one mistake can end your game.
+          💡 Tip: The faster you react, the higher you can stack! But be careful
+          not to rush – one mistake can end your game.
         </div>
-    </div>
+      </div>
 
-    <div class="section">
+      <div class="section">
         <h2>Game Over</h2>
         <p>The game ends when:</p>
         <ul>
-            <li>A piece falls off the left or right side (out-of-bounds).</li>
-            <li>The stack becomes unstable and topples over.</li>
+          <li>A piece falls off the left or right side (out-of-bounds).</li>
+          <li>The stack becomes unstable and topples over.</li>
         </ul>
-        <p>When the game ends, you can reset the board and start stacking again.</p>
-    </div>
+        <p>
+          When the game ends, you can reset the board and start stacking again.
+        </p>
+      </div>
 
-    <div class="section">
+      <div class="section">
         <h2>Scoring</h2>
-        <p>There is no numerical score yet, but your goal is to stack as high as possible. Challenge yourself and others to build the tallest stack!</p>
-    </div>
+        <p>
+          Your goal is to stack as high as possible. Challenge yourself and
+          others to build the tallest stack! Scores are automatically tracked
+          and displayed on the leaderboard.
+        </p>
+      </div>
 
-    <div class="section">
+      <div class="section">
         <h2>Notes</h2>
         <ul>
-            <li>Each canvas is a separate game, so you can play multiple games simultaneously.</li>
-            <li>Gravity and physics are handled by Matter.js, so stacks behave realistically.</li>
+          <li>
+            Each canvas is a separate game, so you can play multiple games
+            simultaneously.
+          </li>
+          <li>
+            Gravity and physics are handled by Matter.js, so stacks behave
+            realistically.
+          </li>
+          <li>Your scores are saved and can be viewed on the leaderboard.</li>
         </ul>
-    </div>
+      </div>
 
-    <div class="section">
+      <div class="section">
         <h2>Enjoy the Game!</h2>
-        <p>Stack shapes, test your reflexes, and try to beat your own records. Have fun!</p>
+        <p>
+          Stack shapes, test your reflexes, and try to beat your own records.
+          Have fun!
+        </p>
+      </div>
     </div>
 
     <script>
-        let currentUtterance = null;
+      let currentUtterance = null;
 
-        function speakPage() {
-            speechSynthesis.cancel();
+      function speakPage() {
+        speechSynthesis.cancel();
 
-            const text = document.body.innerText;
-            currentUtterance = new SpeechSynthesisUtterance(text);
+        const text = document.body.innerText;
+        currentUtterance = new SpeechSynthesisUtterance(text);
 
-            currentUtterance.rate = 1;
-            currentUtterance.pitch = 1;
+        currentUtterance.rate = 1;
+        currentUtterance.pitch = 1;
 
-            document.getElementById("stopBtn").style.display = "inline-block";
+        document.getElementById("stopBtn").style.display = "inline-block";
 
-            currentUtterance.onend = () => {
-                document.getElementById("stopBtn").style.display = "none";
-            };
+        currentUtterance.onend = () => {
+          document.getElementById("stopBtn").style.display = "none";
+        };
 
-            speechSynthesis.speak(currentUtterance);
-        }
+        speechSynthesis.speak(currentUtterance);
+      }
 
-        function stopSpeech() {
-            speechSynthesis.cancel();
-            document.getElementById("stopBtn").style.display = "none";
-        }
+      function stopSpeech() {
+        speechSynthesis.cancel();
+        document.getElementById("stopBtn").style.display = "none";
+      }
 
-        window.addEventListener("beforeunload", () => {
-            speechSynthesis.cancel();
-        });
+      window.addEventListener("beforeunload", () => {
+        speechSynthesis.cancel();
+      });
     </script>
-
-</body>
+  </body>
+</html>

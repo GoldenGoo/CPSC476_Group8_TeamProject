@@ -261,6 +261,9 @@
       const player1NameInput = document.getElementById("player1Name");
       const player2NameInput = document.getElementById("player2Name");
 
+      // Play voice-over when page loads
+      playModalVoiceOver();
+
       // Update display as user types
       player1NameInput.addEventListener("input", function () {
         document.getElementById(
@@ -291,6 +294,9 @@
         // Hide the modal
         playerNamesModal.classList.add("hidden");
 
+        // Play voice-over for starting game
+        playStartGameVoiceOver(p1Name, p2Name);
+
         // NOW initialize the games
         window.initializeGames();
 
@@ -302,6 +308,27 @@
         player2NameInput.value = "Player 2";
         document.getElementById("p1Display").textContent = "";
         document.getElementById("p2Display").textContent = "";
+      }
+
+      // Voice-over functions
+      function playModalVoiceOver() {
+        const utterance = new SpeechSynthesisUtterance(
+          "Let's name the players! Enter the names for Player 1 and Player 2."
+        );
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 0.7;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      function playStartGameVoiceOver(p1Name, p2Name) {
+        const utterance = new SpeechSynthesisUtterance(
+          `Starting game! It's ${p1Name} versus ${p2Name}! Let's go!`
+        );
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 0.7;
+        window.speechSynthesis.speak(utterance);
       }
 
       // Prevent game keypresses from affecting input fields
