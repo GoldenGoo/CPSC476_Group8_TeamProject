@@ -670,6 +670,6 @@ window.addEventListener('DOMContentLoaded', () => {
         window.game2 = new StackGame(canv2, keymap2, 'Player 2');
         // AI-driven third player (no keymap -> no PlayerController)
         window.game3 = new StackGame(canv3, null, "AI");
-        window.game3.aiController = new AIController({ reactionMs: 110, aggression: 0.7, debug: true });
+        window.game3.aiController = new AIController({ reactionMs: 110, aggression: 0.7, debug: false });
     };
 });

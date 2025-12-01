@@ -105,7 +105,10 @@
       <div class="shape star"></div>
     </div>
 
-    <a href="{% url 'logout' %}" class="logout-btn">🚪 Logout</a>
+    <form method="post" action="{% url 'logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="logout-btn" style="border:none; background:none; cursor:pointer;">🚪 Logout</button>
+    </form>
 
     <script src="{% static 'js/shapes_animation.js' %}"></script>
     <script>
