@@ -13,6 +13,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),  # login/signup/logout URLs
     path('', root_redirect),  # root URL redirects to login
+    path('login/', root_redirect),
     path('game/', include('gameapp.urls')),      # game page URLs
     path('save_score/', gameapp_views.save_score, name='save_score'),
 ]
